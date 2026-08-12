@@ -1,0 +1,6 @@
+{
+  "fonts": { "body": "Geist", "mono": "Geist Mono" },
+  "colors": { "accent": "#0e7490", "link": "#0e7490" },
+  "logo": { "path": "assets/logo.png", "width": "3.2cm" },
+  "footer": "AraraHQ — ararahq.com"
+}

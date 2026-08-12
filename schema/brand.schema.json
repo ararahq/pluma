@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ararahq/pluma/schema/brand.schema.json",
+  "title": "pluma brand",
+  "description": "Identidade visual de documentos pluma. Todas as chaves são opcionais.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "fonts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "body": { "type": "string", "description": "Fonte do corpo (nome da família)" },
+        "heading": { "type": "string", "description": "Fonte dos títulos (padrão: a do corpo)" },
+        "mono": { "type": "string", "description": "Fonte de código" },
+        "size": { "type": "number", "minimum": 6, "maximum": 18, "description": "Tamanho base em pt" }
+      }
+    },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": { "$ref": "#/$defs/hex" },
+        "muted": { "$ref": "#/$defs/hex" },
+        "faint": { "$ref": "#/$defs/hex" },
+        "accent": { "$ref": "#/$defs/hex", "description": "Régua do título" },
+        "link": { "$ref": "#/$defs/hex" },
+        "border": { "$ref": "#/$defs/hex" },
+        "codeBackground": { "$ref": "#/$defs/hex" }
+      }
+    },
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "paper": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "a4, us-letter, a5..." },
+        "marginX": { "$ref": "#/$defs/length" },
+        "marginY": { "$ref": "#/$defs/length" }
+      }
+    },
+    "logo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string", "description": "Caminho relativo ao brand.json" },
+        "width": { "$ref": "#/$defs/length" }
+      }
+    },
+    "footer": { "type": "string", "description": "Texto do rodapé; nº de página é automático" }
+  },
+  "$defs": {
+    "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{3,8}$" },
+    "length": { "type": "string", "pattern": "^[0-9.]+(pt|mm|cm|in|em)$" }
+  }
+}

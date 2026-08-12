@@ -1,0 +1,55 @@
+{
+  "name": "@ararahq/pluma",
+  "version": "0.1.0",
+  "description": "Markdown para PDF com tipografia de verdade, sem browser. Typst embutido, ~50ms por documento.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "bin": {
+    "pluma": "dist/bin/pluma.js"
+  },
+  "files": [
+    "dist",
+    "schema",
+    "llms.txt",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun test && tsc -p tsconfig.build.json"
+  },
+  "keywords": [
+    "markdown",
+    "pdf",
+    "typst",
+    "typography",
+    "no-browser"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ararahq/pluma"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@myriaddreamin/typst-ts-node-compiler": "^0.7.0",
+    "marked": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "typescript": "^5.9.3"
+  },
+  "author": "AraraHQ <micael@ararahq.com>",
+  "homepage": "https://github.com/ararahq/pluma#readme",
+  "bugs": {
+    "url": "https://github.com/ararahq/pluma/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

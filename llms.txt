@@ -1,0 +1,97 @@
+# pluma
+
+Markdown to PDF with real typography, no browser. Node library + CLI. Compiles via an
+embedded Typst engine (native binding) in ~50ms. Install: `npm install @ararahq/pluma`.
+
+## Generate a document (what an LLM should output)
+
+Produce plain GFM Markdown with optional YAML frontmatter. Do NOT wrap the document in a
+```markdown fence (pluma tolerates it, but plain is better).
+
+```
+---
+title: Proposta comercial
+subtitle: Escopo e investimento
+author: Ana Silva
+date: Agosto de 2026
+brand: ./brand.json
+---
+
+## Section
+
+Body text with **bold**, _italic_, `code`, [links](https://x.com), images, GFM tables,
+nested lists, > blockquotes. `---` becomes a horizontal rule.
+```
+
+Supported: headings 1-6, paragraphs, bold/italic/strikethrough, inline+fenced code (with
+syntax highlight), links, images (paths relative to the .md), blockquotes, ordered/unordered
+nested lists, GFM tables with `:--`/`--:` alignment, horizontal rules. Raw HTML is dropped.
+All text is escaped — Markdown cannot inject Typst code.
+
+## In-document controls
+
+- `<!-- pagebreak -->` — force a page break.
+- `<!-- columns:2 -->` ... `<!-- /columns -->` — 2-4 balanced text columns (content between
+  the markers stays normal Markdown).
+- ```` ```typst ```` fenced block — raw Typst island for free-form layout (mixed font sizes,
+  colored boxes, grids). Full Typst language available inside. Trusted-author feature.
+
+Example island:
+
+```typst
+#text(size: 18pt, weight: 700)[Big] #text(size: 8pt, style: "italic")[small italic]
+#block(fill: rgb("#ecfeff"), radius: 6pt, inset: 12pt)[Callout box]
+```
+
+## Brand (visual identity) — brand.json
+
+All keys optional. Colors are hex. Lengths use pt/mm/cm/in/em.
+
+```json
+{
+  "fonts": { "body": "Geist", "heading": "Geist", "mono": "Geist Mono", "size": 10.5 },
+  "colors": { "text": "#18181b", "muted": "#71717a", "faint": "#a1a1aa",
+              "accent": "#0e7490", "link": "#0e7490", "border": "#d4d4d8",
+              "codeBackground": "#f4f4f5" },
+  "page": { "paper": "a4", "marginX": "2.2cm", "marginY": "2.4cm" },
+  "logo": { "path": "assets/logo.png", "width": "3.2cm" },
+  "footer": "Company — site.com"
+}
+```
+
+Discovery: a `brand.json` next to the .md is used automatically; `brand:` in frontmatter
+points elsewhere; `--brand` flag overrides both. A `fonts/` dir next to the .md (or the
+brand.json) is picked up automatically for .ttf/.otf files.
+
+## CLI
+
+```
+pluma doc.md                  # zero config; auto-discovers brand.json and fonts/
+pluma doc.md -o out.pdf       # explicit output
+pluma doc.md --json           # machine-readable result: {"ok":true,"output":"..."} on
+                              # stdout, or {"ok":false,"error":{"message":"..."}}
+pluma doc.md --typst          # emit generated Typst source instead of compiling
+pluma doc.md -w               # watch mode, recompiles on save
+pluma mcp                     # MCP server over stdio, exposes tool render_pdf
+```
+
+## Node API
+
+```ts
+import { renderPdf } from "@ararahq/pluma"
+const pdf: Uint8Array = renderPdf(markdown, {
+  brand: { fonts: { body: "Geist" }, footer: "Co" },  // same shape as brand.json
+  fontPaths: ["./fonts"],   // dirs with .ttf/.otf
+  root: "./docs",           // base dir for logo/image paths
+})
+```
+
+Also exported: `markdownToTypstSource(md, opts)` (debug the generated Typst),
+`createTheme(brand)`, `normalizeInput(md)` (strips a wrapping ```markdown fence),
+errors `UnknownThemeError`, `InvalidBrandError` (invalid hex/length values).
+
+## MCP tool (pluma mcp)
+
+Tool `render_pdf`, arguments: `markdown` (string, required), `output_path` (string,
+required, absolute), `brand` (object, optional, same shape as brand.json), `fonts_dir`
+(string, optional), `root` (string, optional). Register: command `pluma`, args `["mcp"]`.
