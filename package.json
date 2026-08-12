@@ -1,7 +1,7 @@
 {
   "name": "@ararahq/pluma",
-  "version": "0.1.0",
-  "description": "Markdown para PDF com tipografia de verdade, sem browser. Typst embutido, ~50ms por documento.",
+  "version": "0.1.1",
+  "description": "Markdown to PDF with real typography, no browser. Embedded Typst engine, ~50ms per document.",
   "license": "MIT",
   "type": "module",
   "main": "dist/src/index.js",
@@ -20,7 +20,8 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "prepublishOnly": "bun test && tsc -p tsconfig.build.json"
+    "prepublishOnly": "bun test && tsc -p tsconfig.build.json",
+    "bench": "node bench/render.mjs"
   },
   "keywords": [
     "markdown",
