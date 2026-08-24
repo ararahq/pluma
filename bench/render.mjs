@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process"
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { renderPdf } from "../dist/src/index.js"
@@ -12,7 +13,7 @@ const ms = (start) => Number(process.hrtime.bigint() - start) / 1e6
 
 let start = process.hrtime.bigint()
 renderPdf(markdown)
-const cold = ms(start)
+const firstRender = ms(start)
 
 const warm = []
 for (let i = 0; i < RUNS; i++) {
@@ -22,7 +23,7 @@ for (let i = 0; i < RUNS; i++) {
 }
 const warmAvg = warm.reduce((a, b) => a + b) / RUNS
 
-console.log(`pluma cold start:      ${cold.toFixed(0)} ms`)
+console.log(`pluma first render after module load: ${firstRender.toFixed(0)} ms`)
 console.log(`pluma warm (avg/${RUNS}):  ${warmAvg.toFixed(1)} ms`)
 
 const CHROME_PATHS = [
@@ -40,8 +41,9 @@ if (!chrome) {
 
 const html = `<html><body><h1>bench</h1><p>Equivalent document with <b>bold</b>, a table and code.</p>
 <table><tr><th>a</th><th>b</th></tr><tr><td>1</td><td>2</td></tr></table><pre>const a = 1</pre></body></html>`
-const htmlPath = join(here, "bench.html")
-const { writeFileSync } = await import("node:fs")
+const scratch = mkdtempSync(join(tmpdir(), "pluma-bench-"))
+const htmlPath = join(scratch, "bench.html")
+const chromePdfPath = join(scratch, "bench-chrome.pdf")
 writeFileSync(htmlPath, html)
 
 const chromeTimes = []
@@ -51,7 +53,7 @@ for (let i = 0; i < 3; i++) {
     "--headless=new",
     "--disable-gpu",
     "--no-sandbox",
-    `--print-to-pdf=${join(here, "bench-chrome.pdf")}`,
+    `--print-to-pdf=${chromePdfPath}`,
     htmlPath,
   ], { stdio: "ignore" })
   chromeTimes.push(ms(start))
@@ -60,3 +62,4 @@ const chromeAvg = chromeTimes.reduce((a, b) => a + b) / chromeTimes.length
 
 console.log(`chrome headless (avg/3): ${chromeAvg.toFixed(0)} ms`)
 console.log(`speedup (warm vs chrome): ${(chromeAvg / warmAvg).toFixed(0)}x`)
+rmSync(scratch, { recursive: true, force: true })

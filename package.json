@@ -1,9 +1,14 @@
 {
   "name": "@ararahq/pluma",
-  "version": "0.1.1",
-  "description": "Markdown to PDF with real typography, no browser. Embedded Typst engine, ~50ms per document.",
+  "version": "0.2.0",
+  "mcpName": "io.github.ararahq/pluma",
+  "description": "Turn Markdown into branded, production-ready PDFs without Chromium or LaTeX.",
   "license": "MIT",
   "type": "module",
+  "workspaces": [
+    "apps/cloud",
+    "packages/*"
+  ],
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "bin": {
@@ -13,19 +18,34 @@
     "dist",
     "schema",
     "llms.txt",
+    "server.json",
+    "NOTICE",
+    "THIRD_PARTY_LICENSES",
+    "examples/fonts/LICENSE-Geist.txt",
+    "docs/deployment.md",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "build:all": "npm run build && npm --workspace @ararahq/pluma-cloud run build && npm --workspace @pluma/cloud run build",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
-    "prepublishOnly": "bun test && tsc -p tsconfig.build.json",
+    "typecheck:all": "npm run typecheck && npm --workspace @ararahq/pluma-cloud run typecheck && npm --workspace @pluma/cloud run typecheck",
+    "test": "bun test test",
+    "test:all": "npm run test && npm --workspace @ararahq/pluma-cloud run test && npm --workspace @pluma/cloud run test",
+    "cloud:dev": "npm --workspace @pluma/cloud run dev",
+    "cloud:migrate": "npm --workspace @pluma/cloud run migrate",
+    "cloud:start": "npm --workspace @pluma/cloud run start",
+    "prepublishOnly": "npm test && tsc -p tsconfig.build.json",
     "bench": "node bench/render.mjs"
   },
   "keywords": [
     "markdown",
     "pdf",
+    "html",
+    "ai-agents",
+    "document-extraction",
     "typst",
     "typography",
     "no-browser"
@@ -35,7 +55,7 @@
     "url": "https://github.com/ararahq/pluma"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@myriaddreamin/typst-ts-node-compiler": "^0.7.0",

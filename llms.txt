@@ -1,7 +1,8 @@
 # pluma
 
-Markdown to PDF with real typography, no browser. Node library + CLI. Compiles via an
-embedded Typst engine (native binding) in ~50ms. Install: `npm install @ararahq/pluma`.
+An open-source document engine that turns Markdown into branded, production-ready PDFs
+without Chromium or LaTeX. Node library + CLI + MCP. PDF, HTML, and public-URL readers
+are included as secondary utilities. Install: `npm install @ararahq/pluma`.
 
 ## Generate a document (what an LLM should output)
 
@@ -68,11 +69,17 @@ brand.json) is picked up automatically for .ttf/.otf files.
 ```
 pluma doc.md                  # zero config; auto-discovers brand.json and fonts/
 pluma doc.md -o out.pdf       # explicit output
-pluma doc.md --json           # machine-readable result: {"ok":true,"output":"..."} on
-                              # stdout, or {"ok":false,"error":{"message":"..."}}
+pluma doc.md --json           # one JSON line: {"ok":true,"output":"...","bytes":...}
+pluma doc.pdf --json          # {"ok":true,"markdown":"...","meta":...,"warnings":...}
+pluma doc.md --typst --json   # {"ok":true,"typst":"..."}
+                              # failures: {"ok":false,"error":{"message":"..."}}
 pluma doc.md --typst          # emit generated Typst source instead of compiling
 pluma doc.md -w               # watch mode, recompiles on save
-pluma mcp                     # MCP server over stdio, exposes tool render_pdf
+pluma doc.pdf                 # PDF -> doc.md
+pluma page.html -o page.md    # HTML -> Markdown
+pluma https://example.com     # URL -> Markdown on stdout
+pluma mcp                     # MCP server over stdio, safe mode
+pluma mcp --trusted-local     # raw Typst/filesystem access; trusted agents only
 ```
 
 ## Node API
@@ -90,8 +97,50 @@ Also exported: `markdownToTypstSource(md, opts)` (debug the generated Typst),
 `createTheme(brand)`, `normalizeInput(md)` (strips a wrapping ```markdown fence),
 errors `UnknownThemeError`, `InvalidBrandError` (invalid hex/length values).
 
-## MCP tool (pluma mcp)
+For hosted/multi-tenant rendering, use `renderPdfCloudSafe(markdown, { brand?, meta? })`.
+It rejects raw Typst, Markdown images, and filesystem-backed/unknown brand fields, then returns
+`{ pdf: Uint8Array, pageCount: number }`. The unrestricted local `renderPdf` API is unchanged.
 
-Tool `render_pdf`, arguments: `markdown` (string, required), `output_path` (string,
-required, absolute), `brand` (object, optional, same shape as brand.json), `fonts_dir`
-(string, optional), `root` (string, optional). Register: command `pluma`, args `["mcp"]`.
+## Read API
+
+```ts
+import { readPdf, readPdfPages, countPdfPages, readHtml, readUrl } from "@ararahq/pluma"
+
+const pdf = readPdf("./doc.pdf")
+pdf.markdown
+pdf.pages
+pdf.meta.pageCount
+pdf.warnings
+
+const html = readHtml(source, { baseUrl: "https://example.com/post" })
+const remote = await readUrl("https://example.com/post", { maxTokens: 4000 })
+```
+
+`readPdf` accepts a path, Buffer, or Uint8Array. Options: `pages` (for example `"1-3,7"`),
+`pageBreaks` (`none|rule|marker`), `headings`, `tables`, `dropHeadersFooters`, `maxPages`,
+`maxBytes`, and `onWarning`. `readPdfPages` iterates decoded pages asynchronously without
+retaining prior page content. `countPdfPages` walks the page tree without decoding content.
+PDF reading uses the existing text layer; OCR and non-empty passwords are not supported.
+
+`readHtml`/`readUrl` options: `mode` (`article|page|raw`), `images`, `links`, `frontMatter`,
+`maxTokens`, `keepSelectors`, and `dropSelectors`. `readUrl` also supports `timeoutMs`,
+`maxBytes`, `maxRedirects`, `headers`, `userAgent`, and `networkPolicy`. Network access is
+public-only and DNS-pinned by default; use `networkPolicy: "any"` only for trusted intranet URLs.
+
+## MCP tools (pluma mcp)
+
+Tool `render_pdf`, arguments: `markdown` (string, required), `output_path` (a `.pdf`
+inside the current working directory), and a cloud-safe `brand` object. Safe mode rejects
+raw Typst, images, custom font paths, filesystem roots, traversal, and symlink escapes.
+`fonts_dir` and `root` are exposed only with `--trusted-local`. Register: command `pluma`,
+args `["mcp"]`.
+
+Tool `read_pdf`: `pdf_path` (absolute path, required), `pages`, `page_breaks`,
+`drop_headers_footers`. Tool `read_html`: `html` (required), `base_url`, `mode`, `images`,
+`links`, `front_matter`, `max_tokens`. Tool `read_url`: `url` (required), the HTML options,
+plus `timeout_ms` and `max_bytes`.
+
+All successful CLI operations with `--json` preserve their operation-specific
+fields inside a top-level `{ "ok": true, ... }` envelope and emit one JSON line
+per completion. This includes render, PDF/HTML/URL read, Typst-source, and help
+results; watch mode emits one envelope per rebuild.

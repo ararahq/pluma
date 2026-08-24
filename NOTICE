@@ -1,0 +1,40 @@
+pluma contains adaptations of third-party algorithms and data. pluma's own
+code remains licensed under the repository's MIT license; the components
+listed below remain subject to their respective licenses.
+
+Mozilla Readability
+-------------------
+
+src/read/html/readability.ts adapts the core article-scoring algorithm from
+Mozilla Readability to pluma's own HTML tree. Its scoring formulas, tag weights,
+and several regular expressions derive from Readability.js; this is not a
+line-for-line port of the full library.
+
+Copyright (c) 2010 Arc90 Inc
+Copyright (c) Mozilla and contributors
+Source: https://github.com/mozilla/readability
+License: Apache License 2.0
+Full text: THIRD_PARTY_LICENSES/Readability-APACHE-2.0.txt
+
+WHATWG HTML Standard named character references
+------------------------------------------------
+
+src/read/html/entities-data.ts is generated from the official named character
+reference data published with the WHATWG HTML Standard.
+
+Copyright © WHATWG (Apple, Google, Mozilla, Microsoft).
+Source: https://html.spec.whatwg.org/entities.json
+License: BSD 3-Clause for portions incorporated into source code
+Full text: THIRD_PARTY_LICENSES/WHATWG-HTML-BSD-3-Clause.txt
+
+Adobe Glyph List
+----------------
+
+The glyph-name mappings in src/read/pdf/fonts/encodings.ts contain a compact,
+adapted subset of the Adobe Glyph List. The PDF simple-font encoding tables are
+implemented from the corresponding public format specifications.
+
+Copyright 2002-2019 Adobe
+Source: https://github.com/adobe-type-tools/agl-aglfn
+License: BSD 3-Clause
+Full text: THIRD_PARTY_LICENSES/Adobe-AGL-BSD-3-Clause.txt

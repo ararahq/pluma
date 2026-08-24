@@ -1,0 +1,42 @@
+{
+  "name": "@ararahq/pluma-cloud",
+  "version": "0.1.0",
+  "description": "Typed client for the Pluma Cloud document I/O API.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ararahq/pluma",
+    "directory": "packages/cloud-sdk"
+  },
+  "homepage": "https://pluma.dev/docs/typescript",
+  "bugs": {
+    "url": "https://github.com/ararahq/pluma/issues"
+  },
+  "author": "AraraHQ <micael@ararahq.com>"
+}

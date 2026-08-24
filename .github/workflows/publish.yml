@@ -1,11 +1,15 @@
-name: Publish
+name: Publish core
 
 on:
   release:
     types: [created]
 
+concurrency:
+  group: publish-core-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
 jobs:
-  test:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,13 +18,15 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
-      - run: bun test
-      - run: npx tsc --noEmit
+      - run: npm audit --audit-level=high
+      - run: npm run typecheck
+      - run: npm test
       - run: npm run build
-      - run: node dist/bin/pluma.js examples/exemplo.md -o /tmp/smoke.pdf
+      - run: node dist/bin/pluma.js examples/exemplo.md -o /tmp/pluma-smoke.pdf
+      - run: npm pack --dry-run --json
 
   publish-npm:
-    needs: test
+    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,4 +39,5 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org/
       - run: npm ci
-      - run: npm publish
+      - run: npm run build
+      - run: npm publish --provenance
