@@ -1,31 +1,43 @@
 import { Lexer, type Token, type Tokens } from "marked"
 import { escapeMarkup, escapeString } from "./escape.js"
 
-export function markdownToTypst(markdown: string): string {
+export interface MarkdownToTypstOptions {
+  allowRawTypst?: boolean
+  allowImages?: boolean
+}
+
+export class DisabledMarkdownFeatureError extends Error {
+  constructor(readonly feature: "raw_typst" | "image") {
+    super(feature === "raw_typst" ? "Raw Typst blocks are disabled" : "Markdown images are disabled")
+    this.name = "DisabledMarkdownFeatureError"
+  }
+}
+
+export function markdownToTypst(markdown: string, options: MarkdownToTypstOptions = {}): string {
   const tokens = Lexer.lex(markdown, { gfm: true })
-  return renderTokens(tokens).trim() + "\n"
+  return renderTokens(tokens, options).trim() + "\n"
 }
 
-function renderTokens(tokens: Token[]): string {
-  return tokens.map(renderToken).join("")
+function renderTokens(tokens: Token[], options: MarkdownToTypstOptions): string {
+  return tokens.map((token) => renderToken(token, options)).join("")
 }
 
-function renderToken(token: Token): string {
+function renderToken(token: Token, options: MarkdownToTypstOptions): string {
   switch (token.type) {
     case "heading":
-      return renderHeading(token as Tokens.Heading)
+      return renderHeading(token as Tokens.Heading, options)
     case "paragraph":
-      return renderInline((token as Tokens.Paragraph).tokens) + "\n\n"
+      return renderInline((token as Tokens.Paragraph).tokens, options) + "\n\n"
     case "text":
-      return renderText(token as Tokens.Text)
+      return renderText(token as Tokens.Text, options)
     case "code":
-      return renderCode(token as Tokens.Code)
+      return renderCode(token as Tokens.Code, options)
     case "blockquote":
-      return renderBlockquote(token as Tokens.Blockquote)
+      return renderBlockquote(token as Tokens.Blockquote, options)
     case "list":
-      return renderList(token as Tokens.List) + "\n"
+      return renderList(token as Tokens.List, options) + "\n"
     case "table":
-      return renderTable(token as Tokens.Table)
+      return renderTable(token as Tokens.Table, options)
     case "hr":
       return "#divider()\n\n"
     case "space":
@@ -38,7 +50,7 @@ function renderToken(token: Token): string {
 }
 
 const DIRECTIVES: Record<string, string> = {
-  "pagebreak": "#pagebreak()\n\n",
+  pagebreak: "#pagebreak()\n\n",
   "/columns": "]\n\n",
 }
 
@@ -52,98 +64,103 @@ function renderDirective(html: string): string {
   return DIRECTIVES[match[1]] ?? ""
 }
 
-function renderHeading(token: Tokens.Heading): string {
+function renderHeading(token: Tokens.Heading, options: MarkdownToTypstOptions): string {
   const level = "=".repeat(Math.min(token.depth, 6))
-  return `${level} ${renderInline(token.tokens)}\n\n`
+  return `${level} ${renderInline(token.tokens, options)}\n\n`
 }
 
-function renderText(token: Tokens.Text): string {
-  if (token.tokens) return renderInline(token.tokens)
+function renderText(token: Tokens.Text, options: MarkdownToTypstOptions): string {
+  if (token.tokens) return renderInline(token.tokens, options)
   return escapeMarkup(token.text)
 }
 
-function renderCode(token: Tokens.Code): string {
-  if (token.lang === "typst") return token.text + "\n\n"
+function renderCode(token: Tokens.Code, options: MarkdownToTypstOptions): string {
+  const language = token.lang?.trim().split(/\s+/, 1)[0]?.toLowerCase()
+  if (language === "typst") {
+    if (options.allowRawTypst === false) throw new DisabledMarkdownFeatureError("raw_typst")
+    return token.text + "\n\n"
+  }
   const lang = token.lang ? `, lang: "${escapeString(token.lang)}"` : ""
   return `#raw(block: true${lang}, "${escapeString(token.text)}")\n\n`
 }
 
-function renderBlockquote(token: Tokens.Blockquote): string {
-  const body = renderTokens(token.tokens).trim()
+function renderBlockquote(token: Tokens.Blockquote, options: MarkdownToTypstOptions): string {
+  const body = renderTokens(token.tokens, options).trim()
   return `#quote(block: true)[${body}]\n\n`
 }
 
-function renderList(token: Tokens.List, depth = 0): string {
+function renderList(token: Tokens.List, options: MarkdownToTypstOptions, depth = 0): string {
   const indent = "  ".repeat(depth)
   return token.items
     .map((item, index) => {
       const marker = token.ordered ? `${Number(token.start || 1) + index}.` : "-"
-      const body = renderListItem(item, depth)
+      const body = renderListItem(item, options, depth)
       return `${indent}${marker} ${body}`
     })
     .join("")
 }
 
-function renderListItem(item: Tokens.ListItem, depth: number): string {
+function renderListItem(item: Tokens.ListItem, options: MarkdownToTypstOptions, depth: number): string {
   const parts: string[] = []
   for (const child of item.tokens) {
     if (child.type === "list") {
-      parts.push("\n" + renderList(child as Tokens.List, depth + 1))
+      parts.push("\n" + renderList(child as Tokens.List, options, depth + 1))
     } else if (child.type === "text" || child.type === "paragraph") {
-      parts.push(renderInline((child as Tokens.Text).tokens ?? []))
+      parts.push(renderInline((child as Tokens.Text).tokens ?? [], options))
     } else {
-      parts.push(renderToken(child).trim())
+      parts.push(renderToken(child, options).trim())
     }
   }
   const text = parts.join(" ").trimEnd()
   return text.endsWith("\n") ? text : text + "\n"
 }
 
-function renderTable(token: Tokens.Table): string {
+function renderTable(token: Tokens.Table, options: MarkdownToTypstOptions): string {
   const columns = token.header.length
   const aligns = token.align
-    .map((a) => (a === null ? "left" : a))
-    .map((a) => `${a}`)
+    .map((alignment) => (alignment === null ? "left" : alignment))
+    .map((alignment) => `${alignment}`)
     .join(", ")
   const header = token.header
-    .map((cell) => `[*${renderInline(cell.tokens)}*]`)
+    .map((cell) => `[*${renderInline(cell.tokens, options)}*]`)
     .join(", ")
   const rows = token.rows
-    .map((row) => row.map((cell) => `[${renderInline(cell.tokens)}]`).join(", "))
+    .map((row) => row.map((cell) => `[${renderInline(cell.tokens, options)}]`).join(", "))
     .join(",\n  ")
   return [
-    `#table(`,
+    "#table(",
     `  columns: ${columns},`,
     `  align: (${aligns}),`,
     `  table.header(${header}),`,
     `  ${rows}`,
-    `)`,
-    ``,
-    ``,
+    ")",
+    "",
+    "",
   ].join("\n")
 }
 
-function renderInline(tokens: Token[]): string {
-  return tokens.map(renderInlineToken).join("")
+function renderInline(tokens: Token[], options: MarkdownToTypstOptions): string {
+  return tokens.map((token) => renderInlineToken(token, options)).join("")
 }
 
-function renderInlineToken(token: Token): string {
+function renderInlineToken(token: Token, options: MarkdownToTypstOptions): string {
   switch (token.type) {
     case "text":
       return escapeMarkup((token as Tokens.Text).text)
     case "strong":
-      return `*${renderInline((token as Tokens.Strong).tokens)}*`
+      return `*${renderInline((token as Tokens.Strong).tokens, options)}*`
     case "em":
-      return `_${renderInline((token as Tokens.Em).tokens)}_`
+      return `_${renderInline((token as Tokens.Em).tokens, options)}_`
     case "del":
-      return `#strike[${renderInline((token as Tokens.Del).tokens)}]`
+      return `#strike[${renderInline((token as Tokens.Del).tokens, options)}]`
     case "codespan":
       return `#raw("${escapeString((token as Tokens.Codespan).text)}")`
     case "link": {
       const link = token as Tokens.Link
-      return `#link("${escapeString(link.href)}")[${renderInline(link.tokens)}]`
+      return `#link("${escapeString(link.href)}")[${renderInline(link.tokens, options)}]`
     }
     case "image": {
+      if (options.allowImages === false) throw new DisabledMarkdownFeatureError("image")
       const image = token as Tokens.Image
       return `#image("${escapeString(image.href)}")`
     }

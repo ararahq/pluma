@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: pluma
+      POSTGRES_USER: pluma
+      POSTGRES_PASSWORD: pluma
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pluma -d pluma"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pluma-postgres:/var/lib/postgresql/data
+
+  migrate:
+    build: .
+    image: pluma-cloud:local
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: &cloud-environment
+      NODE_ENV: development
+      PLUMA_PUBLIC_ORIGIN: http://localhost:8787
+      DATABASE_URL: postgresql://pluma:pluma@postgres:5432/pluma
+      BETTER_AUTH_SECRET: local-compose-secret-change-before-production
+      PLUMA_API_KEY_PEPPER: local-compose-api-key-pepper-change-before-production
+      PLUMA_IDEMPOTENCY_KEYS: bG9jYWwtZGV2ZWxvcG1lbnQta2V5LTMyLWJ5dGVzISE=
+      PLUMA_WORKER_ENTRY: /app/apps/cloud/dist/server/worker/entry.js
+      PLUMA_UNSAFE_DEV_WORKER: "true"
+      PLUMA_SERVE_CLIENT: "true"
+    command: ["npm", "--workspace", "@pluma/cloud", "run", "migrate:prod"]
+
+  cloud:
+    build: .
+    image: pluma-cloud:local
+    profiles: ["app"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *cloud-environment
+      PORT: 8787
+    ports:
+      - "8787:8787"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/ready').then((response)=>process.exit(response.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  pluma-postgres:

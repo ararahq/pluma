@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/ararahq/pluma/schema/brand.schema.json",
   "title": "pluma brand",
-  "description": "Identidade visual de documentos pluma. Todas as chaves são opcionais.",
+  "description": "Visual identity for Pluma documents. Every property is optional.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -10,10 +10,10 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "body": { "type": "string", "description": "Fonte do corpo (nome da família)" },
-        "heading": { "type": "string", "description": "Fonte dos títulos (padrão: a do corpo)" },
-        "mono": { "type": "string", "description": "Fonte de código" },
-        "size": { "type": "number", "minimum": 6, "maximum": 18, "description": "Tamanho base em pt" }
+        "body": { "type": "string", "description": "Body font family" },
+        "heading": { "type": "string", "description": "Heading font family (defaults to the body family)" },
+        "mono": { "type": "string", "description": "Code font family" },
+        "size": { "type": "number", "minimum": 6, "maximum": 18, "description": "Base font size in points" }
       }
     },
     "colors": {
@@ -23,7 +23,7 @@
         "text": { "$ref": "#/$defs/hex" },
         "muted": { "$ref": "#/$defs/hex" },
         "faint": { "$ref": "#/$defs/hex" },
-        "accent": { "$ref": "#/$defs/hex", "description": "Régua do título" },
+        "accent": { "$ref": "#/$defs/hex", "description": "Title accent rule" },
         "link": { "$ref": "#/$defs/hex" },
         "border": { "$ref": "#/$defs/hex" },
         "codeBackground": { "$ref": "#/$defs/hex" }
@@ -43,11 +43,11 @@
       "additionalProperties": false,
       "required": ["path"],
       "properties": {
-        "path": { "type": "string", "description": "Caminho relativo ao brand.json" },
+        "path": { "type": "string", "description": "Path relative to brand.json" },
         "width": { "$ref": "#/$defs/length" }
       }
     },
-    "footer": { "type": "string", "description": "Texto do rodapé; nº de página é automático" }
+    "footer": { "type": "string", "description": "Footer text; page numbering is automatic" }
   },
   "$defs": {
     "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{3,8}$" },

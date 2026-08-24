@@ -1,0 +1,14 @@
+.git
+.claude
+node_modules
+dist
+apps/cloud/dist
+packages/*/dist
+test
+apps/cloud/test
+packages/*/test
+docs
+coverage
+**/.env*
+*.tgz
+.DS_Store
