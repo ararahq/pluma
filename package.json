@@ -32,7 +32,7 @@
     "build:all": "npm run build && npm --workspace @ararahq/pluma-cloud run build && npm --workspace @pluma/cloud run build",
     "typecheck": "tsc --noEmit",
     "typecheck:all": "npm run typecheck && npm --workspace @ararahq/pluma-cloud run typecheck && npm --workspace @pluma/cloud run typecheck",
-    "test": "bun test test",
+    "test": "bun test ./test/",
     "test:all": "npm run test && npm --workspace @ararahq/pluma-cloud run test && npm --workspace @pluma/cloud run test",
     "cloud:dev": "npm --workspace @pluma/cloud run dev",
     "cloud:migrate": "npm --workspace @pluma/cloud run migrate",
