@@ -33,6 +33,26 @@ const titles: Record<string, string> = {
 export function App() {
   const pathname = usePathname().replace(/\/$/, "") || "/";
   useEffect(() => { document.title = titles[pathname] || "Pluma"; }, [pathname]);
+  useEffect(() => {
+    let frame = 0;
+    const followHash = () => {
+      window.cancelAnimationFrame(frame);
+      if (!window.location.hash) return;
+      const rawId = window.location.hash.slice(1);
+      let id = rawId;
+      try { id = decodeURIComponent(rawId); } catch { /* Keep the literal fragment. */ }
+      frame = window.requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView();
+        if (id === "pluma-playground") document.getElementById("demo-markdown")?.focus({ preventScroll: true });
+      });
+    };
+    followHash();
+    window.addEventListener("hashchange", followHash);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", followHash);
+    };
+  }, [pathname]);
 
   if (pathname === "/") return <LandingPage />;
   if (pathname === "/pricing") return <PricingPage />;

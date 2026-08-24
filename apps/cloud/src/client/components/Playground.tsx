@@ -58,10 +58,15 @@ export function Playground({ compact = false }: { compact?: boolean }) {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [resultMeta, setResultMeta] = useState<{ bytes: number; units?: number } | null>(null);
   const urlRef = useRef<string | null>(null);
+  const renderRevisionRef = useRef(0);
 
-  useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
+  useEffect(() => () => {
+    renderRevisionRef.current += 1;
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+  }, []);
 
   function clearResult(nextStatus: Status = "stale") {
+    renderRevisionRef.current += 1;
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     urlRef.current = null;
     setDownloadUrl(null);
@@ -73,16 +78,17 @@ export function Playground({ compact = false }: { compact?: boolean }) {
   function chooseSample(sample: Sample) {
     setActiveSample(sample);
     setMarkdown(samples[sample]);
-    clearResult(downloadUrl ? "stale" : "idle");
+    clearResult("stale");
   }
 
   async function render() {
     const submittedMarkdown = markdown;
-    setStatus("loading");
-    setMessage("Typesetting your document…");
     clearResult("loading");
+    const revision = renderRevisionRef.current;
+    setMessage("Typesetting your document…");
     try {
       const result = await api.demoRender(submittedMarkdown);
+      if (revision !== renderRevisionRef.current) return;
       const url = URL.createObjectURL(result.blob);
       urlRef.current = url;
       setDownloadUrl(url);
@@ -90,6 +96,7 @@ export function Playground({ compact = false }: { compact?: boolean }) {
       setStatus("ready");
       setMessage(`Rendered · ${formatBytes(result.blob.size)}${result.units ? ` · ${result.units} page unit${result.units === 1 ? "" : "s"}` : ""}`);
     } catch (error) {
+      if (revision !== renderRevisionRef.current) return;
       const detail = error instanceof ApiError && (error.status === 502 || error.status === 503 || error.status === 0)
         ? "The renderer is unavailable right now. Your Markdown is safe—try again."
         : error instanceof ApiError ? error.message : "We could not render this document. Your Markdown is unchanged.";
@@ -99,7 +106,7 @@ export function Playground({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div id={compact ? undefined : "pluma-playground"} className={`playground${compact ? " playground--compact" : ""}`} aria-busy={status === "loading"}>
+    <div className={`playground${compact ? " playground--compact" : ""}`} aria-busy={status === "loading"}>
       <div className="playground__toolbar">
         <div className="instrument-brand"><span aria-hidden="true">P/</span><strong>Render desk</strong></div>
         <span className="instrument-file">document.md</span>
@@ -110,7 +117,7 @@ export function Playground({ compact = false }: { compact?: boolean }) {
       <div className="playground__body">
         <div className="editor-pane">
           <label htmlFor={compact ? "dashboard-markdown" : "demo-markdown"}><span>Markdown source</span><small>Example data</small></label>
-          <textarea id={compact ? "dashboard-markdown" : "demo-markdown"} value={markdown} onChange={(event) => { setMarkdown(event.target.value); setActiveSample("memo"); clearResult(downloadUrl ? "stale" : "idle"); }} spellCheck={false} maxLength={20_000} />
+          <textarea id={compact ? "dashboard-markdown" : "demo-markdown"} value={markdown} onChange={(event) => { setMarkdown(event.target.value); setActiveSample("memo"); clearResult("stale"); }} spellCheck={false} maxLength={20_000} />
         </div>
         {!compact && (
           <div className={`paper-preview paper-preview--${status}`}>

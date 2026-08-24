@@ -14,11 +14,20 @@ export function Brand({ compact = false }: { compact?: boolean }) {
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     api.session().then(setSession).catch(() => setSession(null));
+  }, []);
+
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 20);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
   }, []);
 
   useEffect(() => {
@@ -29,20 +38,53 @@ export function SiteHeader() {
 
   useEffect(() => {
     if (!open) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const closeAndRestoreFocus = () => {
       setOpen(false);
-      menuButtonRef.current?.focus();
+      window.requestAnimationFrame(() => menuButtonRef.current?.focus());
     };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeAndRestoreFocus();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusable = Array.from(headerRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? []);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!headerRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
   }, [open]);
 
   return (
-    <header className="site-header">
+    <header ref={headerRef} className={`site-header${scrolled ? " is-scrolled" : ""}`}>
       <div className="site-header__inner shell">
         <Brand />
-        <nav className={`site-nav${open ? " site-nav--open" : ""}`} aria-label="Main navigation">
+        <span className="site-header__signal" aria-hidden="true"><i /> Markdown publishing engine</span>
+        <nav id="primary-navigation" className={`site-nav${open ? " site-nav--open" : ""}`} aria-label="Main navigation" onClick={() => setOpen(false)}>
           <Link href="/docs">Docs</Link>
           <Link href="/pricing">Pricing</Link>
           <a href="https://github.com/ararahq/pluma" target="_blank" rel="noreferrer">GitHub</a>
@@ -60,6 +102,7 @@ export function SiteHeader() {
           ref={menuButtonRef}
           type="button"
           className="menu-button"
+          aria-controls="primary-navigation"
           aria-label={open ? "Close navigation" : "Open navigation"}
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
@@ -73,12 +116,14 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="site-footer">
+    <footer id="site-footer" className="site-footer">
+      <div className="footer-canvas" aria-hidden="true"><i /><i /><i /><span>PLUMA</span></div>
+      <div className="shell site-footer__statement">
+        <p>Markdown is the source.</p>
+        <strong>The document is the product.</strong>
+      </div>
       <div className="shell site-footer__main">
-        <div>
-          <Brand />
-          <p>Production-ready PDFs from Markdown.</p>
-        </div>
+        <div className="site-footer__brand"><Brand /><p>Production-ready PDFs from Markdown.</p><a href="https://github.com/ararahq/pluma" target="_blank" rel="noreferrer">github.com/ararahq/pluma <span aria-hidden="true">↗</span></a></div>
         <div className="site-footer__links">
           <div><strong>Product</strong><Link href="/pricing">Pricing</Link><Link href="/docs">Documentation</Link><Link href="/sign-up">Start building</Link></div>
           <div><strong>Developers</strong><Link href="/docs/rest">REST API</Link><Link href="/docs/typescript">TypeScript</Link><Link href="/docs/mcp">MCP</Link></div>
@@ -87,7 +132,7 @@ export function SiteFooter() {
       </div>
       <div className="shell site-footer__bottom">
         <span>© {new Date().getFullYear()} Pluma by AraraHQ.</span>
-        <span>Files are ephemeral by default.</span>
+        <span className="site-footer__status"><i aria-hidden="true" /> Files are ephemeral by default.</span>
       </div>
     </footer>
   );

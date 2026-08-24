@@ -28,8 +28,10 @@
   },
   "dependencies": {
     "@ararahq/pluma": "file:../..",
+    "@gsap/react": "^2.1.2",
     "@hono/node-server": "2.1.1",
     "better-auth": "1.7.1",
+    "gsap": "^3.15.0",
     "hono": "4.13.3",
     "pg": "8.23.0",
     "react": "19.2.8",

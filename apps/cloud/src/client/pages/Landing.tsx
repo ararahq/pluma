@@ -1,4 +1,7 @@
-import { useEffect } from "react";
+import { useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 import { CodeBlock } from "../components/CodeBlock";
 import { Arrow, Check, File, Terminal } from "../components/Icons";
 import { Playground } from "../components/Playground";
@@ -22,44 +25,71 @@ const deliverables = [
   ["04", "Compliance briefs", "Package structured evidence into a stable, reviewable artifact."],
 ];
 
+gsap.registerPlugin(ScrollTrigger, useGSAP);
+
 function focusInstrument() {
   window.requestAnimationFrame(() => document.getElementById("demo-markdown")?.focus({ preventScroll: true }));
 }
 
 export function LandingPage() {
-  useEffect(() => {
-    const sections = [...document.querySelectorAll<HTMLElement>("[data-reveal-section]")];
-    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
-      if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); }
-    }), { threshold: .14 });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.from(".hero-title-line > span", { yPercent: 115, rotate: 1.5, duration: 1.05, stagger: .09, ease: "power4.out" });
+      gsap.from(".hero-intro", { y: 24, duration: .8, delay: .35, ease: "power3.out" });
+      gsap.from(".playground-motion", {
+        y: 84,
+        scale: .965,
+        opacity: .45,
+        duration: 1.05,
+        ease: "power3.out",
+        scrollTrigger: { trigger: ".playground-stage", start: "top 88%", once: true },
+      });
+      gsap.utils.toArray<HTMLElement>("[data-reveal-section]").forEach((section) => {
+        gsap.from(section, { opacity: 0, y: 70, duration: .9, ease: "power3.out", scrollTrigger: { trigger: section, start: "top 82%", once: true } });
+      });
+      gsap.to(".closing-cta__ghost", { xPercent: -18, ease: "none", scrollTrigger: { trigger: ".closing-cta", start: "top bottom", end: "bottom top", scrub: true } });
+    });
+    media.add("(min-width: 901px) and (prefers-reduced-motion: no-preference)", () => {
+      ScrollTrigger.create({ trigger: ".burden-section", start: "top top+=120", end: "bottom bottom-=80", pin: ".burden-section__intro", pinSpacing: false });
+      gsap.utils.toArray<HTMLElement>(".burden-stack > div").forEach((row, index) => gsap.from(row, {
+        opacity: .15, x: 90 + index * 12, scrollTrigger: { trigger: row, start: "top 78%", end: "top 48%", scrub: true },
+      }));
+    });
+    return () => media.revert();
+  }, { scope: pageRef });
 
   return (
     <MarketingLayout>
-      <div className="landing-page" onPointerMove={(event) => {
-        const bounds = event.currentTarget.getBoundingClientRect();
-        event.currentTarget.style.setProperty("--pointer-x", `${event.clientX - bounds.left}px`);
-        event.currentTarget.style.setProperty("--pointer-y", `${event.clientY - bounds.top}px`);
-      }}>
-        <section className="hero shell">
-          <div className="hero-atmosphere" aria-hidden="true"><i /><i /><i /><span>MD</span><span>PDF</span></div>
-          <div className="hero__copy reveal">
-            <p className="eyebrow"><span aria-hidden="true" /> MIT-licensed rendering core</p>
-            <h1>Markdown in.<br /><em>Client-ready</em> documents out.</h1>
-            <p className="hero__lede">Your app already writes Markdown. Pluma turns it into a polished PDF—without Chromium, print CSS, or a document pipeline to babysit.</p>
+      <div ref={pageRef} className="landing-page">
+        <section className="hero">
+          <div className="binding-field" aria-hidden="true">
+            <svg viewBox="0 0 1440 220" preserveAspectRatio="none">
+              <path className="binding-path binding-path--ghost" d="M-40 108 H238 C278 108 278 146 318 146 H790 C835 146 835 70 880 70 H1090 C1144 70 1144 154 1198 154 H1480" />
+              <path className="binding-path binding-path--live" d="M-40 108 H238 C278 108 278 146 318 146 H790 C835 146 835 70 880 70 H1090 C1144 70 1144 154 1198 154 H1480" />
+              <path className="binding-path binding-path--echo" d="M-40 184 H420 C452 184 452 168 484 168 H1010 C1042 168 1042 194 1074 194 H1480" />
+            </svg>
+            <span className="binding-mark binding-mark--source"><b>#</b><small>source</small></span>
+            <span className="binding-mark binding-mark--tokens"><b>P/</b><small>render</small></span>
+            <span className="binding-mark binding-mark--output"><b>01</b><small>pdf</small></span>
+          </div>
+          <div className="hero__copy shell">
+            <p className="hero-kicker"><span aria-hidden="true">✦</span> Open-source document generation</p>
+            <h1 className="hero-title">
+              <span className="hero-title-line"><span><span>Your app writes Markdown.</span></span></span>
+              <span className="hero-title-line hero-title-line--accent"><span><span>Pluma makes the <em>document.</em></span></span></span>
+            </h1>
+            <div className="hero-intro">
+              <p className="hero__lede">Pluma turns the Markdown your app already produces into polished PDFs—without Chromium, print CSS, or a pipeline to babysit.</p>
             <div className="button-row">
               <a href="#pluma-playground" onClick={focusInstrument} className="button button--large">Render your first PDF <Arrow /></a>
               <a href="https://github.com/ararahq/pluma" target="_blank" rel="noreferrer" className="text-link">Run it locally <span aria-hidden="true">↗</span></a>
             </div>
-            <dl className="hero__facts" aria-label="Product facts">
-              <div><dt>Runtime</dt><dd>No browser process</dd></div>
-              <div><dt>Input</dt><dd>Markdown + brand tokens</dd></div>
-              <div><dt>Output</dt><dd>PDF bytes</dd></div>
-            </dl>
+            </div>
           </div>
-          <div className="hero__proof reveal reveal--delay"><Playground /></div>
+          <div id="pluma-playground" className="playground-stage shell"><div className="playground-stage__caption"><span>Live instrument</span><small>Edit the source. Render the artifact.</small></div><div className="playground-motion"><Playground /></div></div>
         </section>
 
         <section className="format-rail" aria-label="Markdown document workflow">
@@ -71,7 +101,7 @@ export function LandingPage() {
         <section className="burden-section shell section-space" data-reveal-section>
           <div className="section-kicker">What disappears</div>
           <div className="burden-section__grid">
-            <div><h2>A PDF should not require a browser fleet.</h2><p>Every workaround becomes infrastructure. The output improves; the operational surface gets smaller.</p></div>
+            <div className="burden-section__intro"><h2>A PDF should not require a browser fleet.</h2><p>Every workaround becomes infrastructure. The output improves; the operational surface gets smaller.</p></div>
             <div className="burden-stack" aria-label="Work removed by Pluma">
               <div><span>Remove</span><strong>Chromium lifecycle</strong><small>cold starts · crashes · memory</small></div>
               <div><span>Remove</span><strong>Print CSS</strong><small>page breaks · margins · overflow</small></div>
@@ -81,14 +111,14 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="deliverables-section section-space" data-reveal-section>
+        <section id="outputs" className="deliverables-section section-space" data-reveal-section>
           <div className="shell">
             <div className="section-heading section-heading--split">
               <div><p className="section-kicker">The actual product</p><h2>Your customer pays for the deliverable.</h2></div>
               <p>Reports, audits, proposals, and briefs leave your app with enough structure to review, approve, and trust.</p>
             </div>
             <div className="deliverable-grid">
-              {deliverables.map(([number, title, copy]) => <article key={number} className={`deliverable deliverable--${number}`}><span>{number}</span><h3>{title}</h3><p>{copy}</p><File size={22} /></article>)}
+              {deliverables.map(([number, title, copy]) => <article key={number} className={`deliverable deliverable--${number}`}><div className={`deliverable__art deliverable__art--${number}`} aria-hidden="true"><i /><i /><i /></div><span>{number}</span><h3>{title}</h3><p>{copy}</p><File size={22} /></article>)}
             </div>
           </div>
         </section>
@@ -116,7 +146,7 @@ export function LandingPage() {
           <div className="shell privacy-section__inner"><div className="privacy-index" aria-hidden="true">P/01</div><div><p className="section-kicker">A document is not telemetry</p><h2>Ephemeral by default.</h2><p>Raw input is not kept as document history. Successful idempotent responses may be encrypted for 15 minutes; operational metadata excludes document content.</p></div><Link href="/docs/privacy" className="text-link">Read the privacy model <Arrow size={16} /></Link></div>
         </section>
 
-        <section className="closing-cta shell section-space" data-reveal-section><div><p className="section-kicker">One useful minute</p><h2>Give your Markdown a destination.</h2><p>Edit the example, render a real PDF, and decide from the artifact—not the pitch.</p></div><a href="#pluma-playground" onClick={focusInstrument} className="button button--large">Render your first PDF <Arrow /></a></section>
+        <section className="closing-cta shell section-space" data-reveal-section><span className="closing-cta__ghost" aria-hidden="true">MD→PDF→MD→PDF</span><div><p className="section-kicker">One useful minute</p><h2>Give your Markdown a destination.</h2><p>Edit the example, render a real PDF, and decide from the artifact—not the pitch.</p></div><a href="#pluma-playground" onClick={focusInstrument} className="button button--large">Render your first PDF <Arrow /></a></section>
       </div>
     </MarketingLayout>
   );

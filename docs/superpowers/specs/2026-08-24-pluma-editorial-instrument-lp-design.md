@@ -43,7 +43,10 @@ The redesign is approved only if it passes these ten gates.
 
 ## Visual system
 
-The selected archetype is **Soft Structuralism + Z-axis document cascade**.
+The selected archetype is **Editorial Baseline + Live Instrument**. The signature
+is one authored typesetting path that reads left-to-right as source, render, and
+PDF. It sits between the promise and the working renderer instead of crossing the
+headline or imitating decorative product orbits.
 
 - Canvas: cold white `#f5f7fc`.
 - Structural ink: midnight `#111936`.
@@ -52,31 +55,35 @@ The selected archetype is **Soft Structuralism + Z-axis document cascade**.
 - Tertiary surface: periwinkle `#d9deff`.
 - Body: graphite `#161a23`.
 - Reserved semantic colors: red, orange, yellow, and green are not decorative.
-- Interface typography: Geist/system geometric sans. Editorial serif appears only
-  inside the rendered document, making transformation visible.
+- Interface typography: Avenir/system geometric sans. Editorial serif is reserved
+  for the word `document` in the promise and the rendered artifact, making the
+  transformation visible without turning the whole page into a magazine theme.
 
-Major surfaces use concentric radii and layered transparent shadows. Dividers may
-use hairlines; cards must not rely on generic gray borders for elevation. Buttons
-have at least 44px hit areas, optical icon padding, `scale(.96)` press feedback,
-and transitions limited to properties that change.
+The page uses a 12-column editorial grid, hairline registration rules, a folded-page
+Pluma mark, and restrained physical depth on the live instrument. Rounded surfaces
+are reserved for controls and the renderer, not repeated as generic SaaS cards.
+Buttons have at least 44px hit areas, optical icon padding, `scale(.96)` press
+feedback, and transitions limited to properties that change.
 
 ## Page architecture
 
 ### Header
 
-A compact floating navigation instrument rather than an edge-to-edge bar. It
-contains the Pluma mark, Docs, Pricing, GitHub, sign-in state, and one cobalt CTA.
-The CTA is `Render a PDF` and links to `/#pluma-playground`; on the landing page
-it scrolls to and focuses `#demo-markdown`.
+An edge-to-edge editorial masthead uses a hairline rule, the folded-page Pluma
+mark, a centered publishing-engine signal, Docs, Pricing, GitHub, sign-in state,
+and one cobalt CTA. It does not use the centered floating capsule from the visual
+reference. The CTA is `Render a PDF` and links to `/#pluma-playground`; on the
+landing page it scrolls to and focuses `#demo-markdown`.
 
 ### Hero
 
 - Eyebrow: public OSS/runtime fact.
-- H1: `Markdown in. Client-ready documents out.`
+- H1: `Your app writes Markdown. Pluma makes the document.`
 - Lede: explains branded PDF generation without Chromium or print-template work.
 - Primary CTA: render in the live instrument.
 - Secondary CTA: copy or follow the local npm installation path.
-- Public proof strip: MIT licensed, no browser runtime, qualified warm benchmark.
+- A directional baseline labels source, render, and PDF without acting as a
+  performance claim.
 - Live source-to-document instrument with a real render/download action.
 - The idle paper is explicitly an illustrative preview. After rendering, the
   instrument embeds the returned PDF as the actual artifact preview, reports its
