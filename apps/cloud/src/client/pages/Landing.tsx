@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import { useGSAP } from "@gsap/react";
 import { CodeBlock } from "../components/CodeBlock";
 import { Arrow, Check, File, Terminal } from "../components/Icons";
@@ -25,7 +25,7 @@ const deliverables = [
   ["04", "Compliance briefs", "Package structured evidence into a stable, reviewable artifact."],
 ];
 
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+gsap.registerPlugin(MotionPathPlugin, useGSAP);
 
 function focusInstrument() {
   window.requestAnimationFrame(() => document.getElementById("demo-markdown")?.focus({ preventScroll: true }));
@@ -37,26 +37,93 @@ export function LandingPage() {
   useGSAP(() => {
     const media = gsap.matchMedia();
     media.add("(prefers-reduced-motion: no-preference)", () => {
-      gsap.from(".hero-title-line > span", { yPercent: 115, rotate: 1.5, duration: 1.05, stagger: .09, ease: "power4.out" });
-      gsap.from(".hero-intro", { y: 24, duration: .8, delay: .35, ease: "power3.out" });
-      gsap.from(".playground-motion", {
-        y: 84,
-        scale: .965,
-        opacity: .45,
-        duration: 1.05,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ".playground-stage", start: "top 88%", once: true },
-      });
-      gsap.utils.toArray<HTMLElement>("[data-reveal-section]").forEach((section) => {
-        gsap.from(section, { opacity: 0, y: 70, duration: .9, ease: "power3.out", scrollTrigger: { trigger: section, start: "top 82%", once: true } });
-      });
-      gsap.to(".closing-cta__ghost", { xPercent: -18, ease: "none", scrollTrigger: { trigger: ".closing-cta", start: "top bottom", end: "bottom top", scrub: true } });
-    });
-    media.add("(min-width: 901px) and (prefers-reduced-motion: no-preference)", () => {
-      ScrollTrigger.create({ trigger: ".burden-section", start: "top top+=120", end: "bottom bottom-=80", pin: ".burden-section__intro", pinSpacing: false });
-      gsap.utils.toArray<HTMLElement>(".burden-stack > div").forEach((row, index) => gsap.from(row, {
-        opacity: .15, x: 90 + index * 12, scrollTrigger: { trigger: row, start: "top 78%", end: "top 48%", scrub: true },
-      }));
+      const route = pageRef.current?.querySelector<SVGPathElement>(".binding-path--route");
+      const livePath = pageRef.current?.querySelector<SVGPathElement>(".binding-path--live");
+      const courier = pageRef.current?.querySelector<HTMLElement>(".binding-courier");
+      const courierStates = Array.from(pageRef.current?.querySelectorAll<HTMLElement>(".binding-courier__state span") ?? []);
+      const stations = Array.from(pageRef.current?.querySelectorAll<HTMLElement>(".binding-mark b") ?? []);
+      const preview = pageRef.current?.querySelector<HTMLElement>(".paper-preview");
+
+      if (!route || !courier) return;
+
+      const pathFlow = livePath
+        ? gsap.to(livePath, { strokeDashoffset: -58, duration: 1.15, repeat: -1, ease: "none" })
+        : null;
+
+      const story = gsap.timeline({ repeat: -1, repeatDelay: .45 });
+      const showState = (index: number, at: string) => {
+        story.set(courierStates, { autoAlpha: 0 }, at);
+        if (courierStates[index]) story.set(courierStates[index], { autoAlpha: 1 }, at);
+      };
+      const pulseStation = (index: number, at: string) => {
+        if (!stations[index]) return;
+        story.to(stations[index], {
+          scale: 1.13,
+          backgroundColor: "#246ff4",
+          color: "#ffffff",
+          duration: .18,
+          repeat: 1,
+          yoyo: true,
+          ease: "power2.out",
+        }, at);
+      };
+
+      story
+        .addLabel("source", 0)
+        .set(courier, {
+          autoAlpha: 0,
+          scale: .94,
+          motionPath: { path: route, align: route, alignOrigin: [.5, .82], start: .075, end: .075 },
+        }, "source")
+        .to(courier, { autoAlpha: 1, scale: 1, duration: .28, ease: "power2.out" }, "source")
+        .to(courier, {
+          duration: 2.35,
+          motionPath: { path: route, align: route, alignOrigin: [.5, .82], start: .075, end: .59 },
+          ease: "power1.inOut",
+        }, "source+=.12")
+        .addLabel("render", "source+=2.47")
+        .to(courier, { scale: 1.08, duration: .16, repeat: 1, yoyo: true, ease: "power2.out" }, "render")
+        .to(courier, {
+          duration: 2.2,
+          motionPath: { path: route, align: route, alignOrigin: [.5, .82], start: .59, end: .93 },
+          ease: "power1.inOut",
+        }, "render+=.3")
+        .addLabel("output", "render+=2.5")
+        .to(courier, { scale: 1.08, duration: .16, repeat: 1, yoyo: true, ease: "power2.out" }, "output")
+        .to(courier, { autoAlpha: 0, y: -7, duration: .32, ease: "power2.in" }, "output+=.82");
+
+      showState(0, "source");
+      showState(1, "render");
+      showState(2, "output");
+      pulseStation(0, "source+=.03");
+      pulseStation(1, "render");
+      pulseStation(2, "output");
+      if (preview) {
+        story.to(preview, { y: -4, scale: 1.01, duration: .22, repeat: 1, yoyo: true, ease: "power2.out" }, "output+=.04");
+      }
+
+      let heroIsVisible = true;
+      const syncPlayback = () => {
+        if (heroIsVisible && !document.hidden) {
+          story.resume();
+          pathFlow?.resume();
+        } else {
+          story.pause();
+          pathFlow?.pause();
+        }
+      };
+      const hero = pageRef.current?.querySelector<HTMLElement>(".hero");
+      const observer = new IntersectionObserver(([entry]) => {
+        heroIsVisible = entry?.isIntersecting ?? false;
+        syncPlayback();
+      }, { threshold: .04 });
+      if (hero) observer.observe(hero);
+      document.addEventListener("visibilitychange", syncPlayback);
+
+      return () => {
+        observer.disconnect();
+        document.removeEventListener("visibilitychange", syncPlayback);
+      };
     });
     return () => media.revert();
   }, { scope: pageRef });
@@ -65,16 +132,6 @@ export function LandingPage() {
     <MarketingLayout>
       <div ref={pageRef} className="landing-page">
         <section className="hero">
-          <div className="binding-field" aria-hidden="true">
-            <svg viewBox="0 0 1440 220" preserveAspectRatio="none">
-              <path className="binding-path binding-path--ghost" d="M-40 108 H238 C278 108 278 146 318 146 H790 C835 146 835 70 880 70 H1090 C1144 70 1144 154 1198 154 H1480" />
-              <path className="binding-path binding-path--live" d="M-40 108 H238 C278 108 278 146 318 146 H790 C835 146 835 70 880 70 H1090 C1144 70 1144 154 1198 154 H1480" />
-              <path className="binding-path binding-path--echo" d="M-40 184 H420 C452 184 452 168 484 168 H1010 C1042 168 1042 194 1074 194 H1480" />
-            </svg>
-            <span className="binding-mark binding-mark--source"><b>#</b><small>source</small></span>
-            <span className="binding-mark binding-mark--tokens"><b>P/</b><small>render</small></span>
-            <span className="binding-mark binding-mark--output"><b>01</b><small>pdf</small></span>
-          </div>
           <div className="hero__copy shell">
             <p className="hero-kicker"><span aria-hidden="true">✦</span> Open-source document generation</p>
             <h1 className="hero-title">
@@ -88,6 +145,20 @@ export function LandingPage() {
               <a href="https://github.com/ararahq/pluma" target="_blank" rel="noreferrer" className="text-link">Run it locally <span aria-hidden="true">↗</span></a>
             </div>
             </div>
+          </div>
+          <div className="binding-field" aria-hidden="true">
+            <svg viewBox="0 0 1440 220" preserveAspectRatio="none">
+              <path className="binding-path binding-path--route binding-path--ghost" d="M-40 108 H238 C278 108 278 146 318 146 H790 C835 146 835 70 880 70 H1090 C1144 70 1144 154 1198 154 H1480" />
+              <path className="binding-path binding-path--live" d="M-40 108 H238 C278 108 278 146 318 146 H790 C835 146 835 70 880 70 H1090 C1144 70 1144 154 1198 154 H1480" />
+              <path className="binding-path binding-path--echo" d="M-40 184 H420 C452 184 452 168 484 168 H1010 C1042 168 1042 194 1074 194 H1480" />
+            </svg>
+            <span className="binding-courier">
+              <span className="binding-courier__paper"><i /><i /><i /></span>
+              <span className="binding-courier__state"><span>Markdown</span><span>Typesetting</span><span>PDF ready</span></span>
+            </span>
+            <span className="binding-mark binding-mark--source"><b>MD</b><small>Markdown source</small></span>
+            <span className="binding-mark binding-mark--tokens"><b>P/</b><small>Pluma render</small></span>
+            <span className="binding-mark binding-mark--output"><b>PDF</b><small>PDF ready</small></span>
           </div>
           <div id="pluma-playground" className="playground-stage shell"><div className="playground-stage__caption"><span>Live instrument</span><small>Edit the source. Render the artifact.</small></div><div className="playground-motion"><Playground /></div></div>
         </section>
@@ -146,7 +217,7 @@ export function LandingPage() {
           <div className="shell privacy-section__inner"><div className="privacy-index" aria-hidden="true">P/01</div><div><p className="section-kicker">A document is not telemetry</p><h2>Ephemeral by default.</h2><p>Raw input is not kept as document history. Successful idempotent responses may be encrypted for 15 minutes; operational metadata excludes document content.</p></div><Link href="/docs/privacy" className="text-link">Read the privacy model <Arrow size={16} /></Link></div>
         </section>
 
-        <section className="closing-cta shell section-space" data-reveal-section><span className="closing-cta__ghost" aria-hidden="true">MD→PDF→MD→PDF</span><div><p className="section-kicker">One useful minute</p><h2>Give your Markdown a destination.</h2><p>Edit the example, render a real PDF, and decide from the artifact—not the pitch.</p></div><a href="#pluma-playground" onClick={focusInstrument} className="button button--large">Render your first PDF <Arrow /></a></section>
+        <section className="closing-cta shell section-space" data-reveal-section><div className="closing-cta__route" aria-label="Markdown to Pluma to PDF"><span>Markdown</span><i aria-hidden="true">→</i><span>Pluma</span><i aria-hidden="true">→</i><strong>PDF</strong></div><div><p className="section-kicker">One useful minute</p><h2>Give your Markdown a destination.</h2><p>Edit the example, render a real PDF, and decide from the artifact—not the pitch.</p></div><a href="#pluma-playground" onClick={focusInstrument} className="button button--large">Render your first PDF <Arrow /></a></section>
       </div>
     </MarketingLayout>
   );
