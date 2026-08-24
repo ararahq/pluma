@@ -11,6 +11,10 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ararahq/pluma": ["../../src/index.ts"]
+    },
     "types": ["node", "vite/client"]
   },
   "include": ["src", "scripts", "vite.config.ts", "vitest.config.ts"]
