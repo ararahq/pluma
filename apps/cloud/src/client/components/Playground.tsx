@@ -1,41 +1,42 @@
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../lib/api";
+import { Link } from "../lib/router";
 import { Arrow, Check, Download } from "./Icons";
 
 const samples = {
   memo: `---
 title: "Weekly research brief"
-author: "Northstar Research"
+author: "Northstar Labs"
 ---
 
 # A calmer way to ship agent output
 
-AI agents are good at producing Markdown. Pluma turns that output into a document people can review, forward, and trust.
+Example data — Pluma turns Markdown into a document people can review, forward, and trust.
 
 ## This week
 
-- **18 sources** reviewed across product and market research
+- **18 sources** reviewed
 - **3 decisions** ready for approval
-- **1 risk** needs an owner before Friday
+- **1 risk** needs an owner
 
-> The deliverable is part of the product—not an afterthought.
+> The deliverable is part of the product.
 
 ## Recommendation
 
-Keep the pipeline in Markdown. Render the final artifact at the boundary.`,
+Keep the pipeline in Markdown. Render the artifact at the boundary.`,
   proposal: `---
 title: "Implementation proposal"
-author: "Fieldwork Studio"
+author: "Northstar Labs"
 ---
 
 # Document automation, without a browser
 
-Prepared for **Acme Systems** · August 2026
+Example data — prepared for **Atlas Works** · August 2026
 
 ## Scope
 
 1. Generate the proposal in Markdown
-2. Apply the client brand automatically
+2. Apply brand tokens automatically
 3. Deliver a production-ready PDF
 
 ## Investment
@@ -43,88 +44,96 @@ Prepared for **Acme Systems** · August 2026
 | Phase | Timeline | Fee |
 | --- | --- | ---: |
 | Pilot | 2 weeks | $4,800 |
-| Production | 4 weeks | $12,500 |
-
-Payment terms: 50% at kickoff, 50% on delivery.`,
+| Production | 4 weeks | $12,500 |`,
 };
 
+type Sample = keyof typeof samples;
+type Status = "idle" | "stale" | "loading" | "ready" | "error";
+
 export function Playground({ compact = false }: { compact?: boolean }) {
+  const [activeSample, setActiveSample] = useState<Sample>("memo");
   const [markdown, setMarkdown] = useState(samples.memo);
-  const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("Ready to render");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [resultMeta, setResultMeta] = useState<{ bytes: number; units?: number } | null>(null);
   const urlRef = useRef<string | null>(null);
 
-  useEffect(() => () => {
+  useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
+
+  function clearResult(nextStatus: Status = "stale") {
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-  }, []);
+    urlRef.current = null;
+    setDownloadUrl(null);
+    setResultMeta(null);
+    setStatus(nextStatus);
+    setMessage(nextStatus === "stale" ? "Source changed · render again" : "Ready to render");
+  }
+
+  function chooseSample(sample: Sample) {
+    setActiveSample(sample);
+    setMarkdown(samples[sample]);
+    clearResult(downloadUrl ? "stale" : "idle");
+  }
 
   async function render() {
+    const submittedMarkdown = markdown;
     setStatus("loading");
     setMessage("Typesetting your document…");
-    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    setDownloadUrl(null);
+    clearResult("loading");
     try {
-      const result = await api.demoRender(markdown);
+      const result = await api.demoRender(submittedMarkdown);
       const url = URL.createObjectURL(result.blob);
       urlRef.current = url;
       setDownloadUrl(url);
+      setResultMeta({ bytes: result.blob.size, units: result.units });
       setStatus("ready");
-      setMessage(result.units ? `Rendered · ${result.units} page unit${result.units === 1 ? "" : "s"}` : "Your PDF is ready");
+      setMessage(`Rendered · ${formatBytes(result.blob.size)}${result.units ? ` · ${result.units} page unit${result.units === 1 ? "" : "s"}` : ""}`);
     } catch (error) {
       const detail = error instanceof ApiError && (error.status === 502 || error.status === 503 || error.status === 0)
-        ? "The demo renderer is unavailable right now. Try again shortly."
-        : error instanceof ApiError ? error.message : "We could not render this document.";
+        ? "The renderer is unavailable right now. Your Markdown is safe—try again."
+        : error instanceof ApiError ? error.message : "We could not render this document. Your Markdown is unchanged.";
       setStatus("error");
       setMessage(detail);
     }
   }
 
   return (
-    <div className={`playground${compact ? " playground--compact" : ""}`}>
+    <div id={compact ? undefined : "pluma-playground"} className={`playground${compact ? " playground--compact" : ""}`} aria-busy={status === "loading"}>
       <div className="playground__toolbar">
-        <div className="window-dots" aria-hidden="true"><i /><i /><i /></div>
-        <span>document.md</span>
-        <div className="sample-switcher" aria-label="Document samples">
-          <button type="button" onClick={() => setMarkdown(samples.memo)}>Memo</button>
-          <button type="button" onClick={() => setMarkdown(samples.proposal)}>Proposal</button>
+        <div className="instrument-brand"><span aria-hidden="true">P/</span><strong>Render desk</strong></div>
+        <span className="instrument-file">document.md</span>
+        <div className="sample-switcher" aria-label="Example documents">
+          {(["memo", "proposal"] as Sample[]).map((sample) => <button key={sample} type="button" aria-pressed={activeSample === sample} onClick={() => chooseSample(sample)}>{sample === "memo" ? "Brief" : "Proposal"}</button>)}
         </div>
       </div>
       <div className="playground__body">
         <div className="editor-pane">
-          <label htmlFor={compact ? "dashboard-markdown" : "demo-markdown"}>Markdown</label>
-          <textarea
-            id={compact ? "dashboard-markdown" : "demo-markdown"}
-            value={markdown}
-            onChange={(event) => setMarkdown(event.target.value)}
-            spellCheck={false}
-            maxLength={20_000}
-          />
+          <label htmlFor={compact ? "dashboard-markdown" : "demo-markdown"}><span>Markdown source</span><small>Example data</small></label>
+          <textarea id={compact ? "dashboard-markdown" : "demo-markdown"} value={markdown} onChange={(event) => { setMarkdown(event.target.value); setActiveSample("memo"); clearResult(downloadUrl ? "stale" : "idle"); }} spellCheck={false} maxLength={20_000} />
         </div>
         {!compact && (
-          <div className="paper-preview" aria-label="Document preview">
-            <div className="paper-preview__page">
-              <span className="paper-preview__folio">PLUMA / 01</span>
-              <h3>{markdown.includes("Implementation proposal") ? "Implementation proposal" : "Weekly research brief"}</h3>
-              <p className="paper-preview__lead">A production document, not a screenshot of one.</p>
-              <div className="paper-preview__lines"><i /><i /><i /><i /><i /></div>
-              <blockquote>The deliverable is part of the product.</blockquote>
-              <div className="paper-preview__footer"><span>Northstar Research</span><span>1</span></div>
-            </div>
+          <div className={`paper-preview paper-preview--${status}`}>
+            {downloadUrl ? (
+              <article className="paper-result" aria-labelledby="preview-title"><div className="preview-label"><span>Actual render</span><small>{resultMeta ? formatBytes(resultMeta.bytes) : "PDF"}</small></div><span id="preview-title" className="sr-only">Generated PDF preview</span><iframe src={`${downloadUrl}#toolbar=0&navpanes=0`} title="Generated PDF preview" /></article>
+            ) : (
+              <article className="paper-preview__page" aria-labelledby="preview-title"><div className="preview-label"><span>Illustrative preview</span><small>Example data</small></div><span className="paper-preview__folio">PLUMA / 01</span><span id="preview-title" className="paper-preview__title">{activeSample === "proposal" ? "Implementation proposal" : "Weekly research brief"}</span><p className="paper-preview__lead">A production document, not a screenshot of one.</p><div className="paper-preview__lines"><i /><i /><i /><i /><i /></div><blockquote>The deliverable is part of the product.</blockquote><div className="paper-preview__footer"><span>Northstar Labs</span><span>1</span></div></article>
+            )}
           </div>
         )}
       </div>
       <div className="playground__footer">
-        <div className={`render-status render-status--${status}`} role="status" aria-live="polite">
-          {status === "ready" ? <Check size={15} /> : <span className="status-dot" />}{message}
-        </div>
+        <div className={`render-status render-status--${status}`} role="status" aria-live="polite">{status === "ready" ? <Check size={15} /> : <span className="status-dot" />}{message}</div>
         <div className="playground__actions">
-          {downloadUrl && <a className="button button--quiet" href={downloadUrl} download="pluma-document.pdf"><Download /> Download</a>}
-          <button type="button" className="button" onClick={render} disabled={status === "loading" || !markdown.trim()}>
-            {status === "loading" ? "Rendering…" : "Render PDF"} {status !== "loading" && <Arrow size={16} />}
-          </button>
+          {downloadUrl && <><a className="button button--quiet" href={downloadUrl} download="pluma-document.pdf"><Download /> Download</a><Link className="button button--quiet api-key-link" href="/dashboard/keys">Create an API key</Link></>}
+          <button type="button" className="button" onClick={render} disabled={status === "loading" || !markdown.trim()}>{status === "loading" ? "Rendering…" : status === "error" ? "Retry render" : "Render PDF"} {status !== "loading" && <Arrow size={16} />}</button>
         </div>
       </div>
+      {!compact && <p className="playground__disclosure">Your Markdown is sent to Pluma Cloud for this render. Raw input is not kept as document history. Demo limit: 20 KiB UTF-8 and 3 output pages. <Link href="/docs/privacy">Privacy</Link></p>}
     </div>
   );
+}
+
+function formatBytes(bytes: number) {
+  return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KiB`;
 }

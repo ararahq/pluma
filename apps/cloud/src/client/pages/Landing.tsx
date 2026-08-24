@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { CodeBlock } from "../components/CodeBlock";
 import { Arrow, Check, File, Terminal } from "../components/Icons";
 import { Playground } from "../components/Playground";
@@ -7,120 +8,116 @@ import { Link } from "../lib/router";
 const sdkCode = `import { Pluma } from "@ararahq/pluma-cloud";
 
 const pluma = new Pluma({ apiKey: process.env.PLUMA_API_KEY! });
-
 const markdown = await agent.run(reportPrompt);
+
 const { pdf } = await pluma.render({
   markdown,
-  brand: { primaryColor: "#e34824" },
+  brand: { primaryColor: "#3d5afe" },
 });`;
 
+const deliverables = [
+  ["01", "Research reports", "Turn citations, decisions, and recommendations into a document stakeholders can forward."],
+  ["02", "Security audits", "Give findings, severity, evidence, and remediation a readable hierarchy."],
+  ["03", "Client proposals", "Apply a consistent brand to scope, timeline, and commercial terms."],
+  ["04", "Compliance briefs", "Package structured evidence into a stable, reviewable artifact."],
+];
+
+function focusInstrument() {
+  window.requestAnimationFrame(() => document.getElementById("demo-markdown")?.focus({ preventScroll: true }));
+}
+
 export function LandingPage() {
+  useEffect(() => {
+    const sections = [...document.querySelectorAll<HTMLElement>("[data-reveal-section]")];
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (entry.isIntersecting) { entry.target.classList.add("is-visible"); observer.unobserve(entry.target); }
+    }), { threshold: .14 });
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <MarketingLayout>
-      <section className="hero shell">
-        <div className="hero__copy reveal">
-          <p className="eyebrow">Open-source document generation</p>
-          <h1>Turn agent output into a document worth sending.</h1>
-          <p className="hero__lede">Generate branded, production-ready PDFs from Markdown—without running Chromium or building a document pipeline.</p>
-          <div className="button-row">
-            <Link href="/sign-up" className="button button--large">Render your first PDF <Arrow /></Link>
-            <a href="https://github.com/ararahq/pluma" target="_blank" rel="noreferrer" className="text-link">Run it locally <span aria-hidden="true">↗</span></a>
+      <div className="landing-page" onPointerMove={(event) => {
+        const bounds = event.currentTarget.getBoundingClientRect();
+        event.currentTarget.style.setProperty("--pointer-x", `${event.clientX - bounds.left}px`);
+        event.currentTarget.style.setProperty("--pointer-y", `${event.clientY - bounds.top}px`);
+      }}>
+        <section className="hero shell">
+          <div className="hero-atmosphere" aria-hidden="true"><i /><i /><i /><span>MD</span><span>PDF</span></div>
+          <div className="hero__copy reveal">
+            <p className="eyebrow"><span aria-hidden="true" /> MIT-licensed rendering core</p>
+            <h1>Markdown in.<br /><em>Client-ready</em> documents out.</h1>
+            <p className="hero__lede">Your app already writes Markdown. Pluma turns it into a polished PDF—without Chromium, print CSS, or a document pipeline to babysit.</p>
+            <div className="button-row">
+              <a href="#pluma-playground" onClick={focusInstrument} className="button button--large">Render your first PDF <Arrow /></a>
+              <a href="https://github.com/ararahq/pluma" target="_blank" rel="noreferrer" className="text-link">Run it locally <span aria-hidden="true">↗</span></a>
+            </div>
+            <dl className="hero__facts" aria-label="Product facts">
+              <div><dt>Runtime</dt><dd>No browser process</dd></div>
+              <div><dt>Input</dt><dd>Markdown + brand tokens</dd></div>
+              <div><dt>Output</dt><dd>PDF bytes</dd></div>
+            </dl>
           </div>
-        </div>
-        <div className="hero__proof reveal reveal--delay">
-          <Playground />
-        </div>
-      </section>
+          <div className="hero__proof reveal reveal--delay"><Playground /></div>
+        </section>
 
-      <section className="format-rail" aria-label="Markdown document workflow">
-        <div className="shell format-rail__inner">
-          <span>Your app</span><i>→</i><span>Your agent</span><i>→</i>
-          <strong>Markdown</strong><i>→</i><span>Branded PDF</span><i>→</i><span>Customer</span>
-        </div>
-      </section>
-
-      <section className="workflow-section shell section-space">
-        <div className="section-heading">
-          <h2>Your customer pays for the deliverable, not the pipeline.</h2>
-          <p>Keep your product in Markdown. Let Pluma handle the typography, pagination, branding, and PDF runtime.</p>
-        </div>
-        <div className="workflow-grid">
-          <article className="workflow-step workflow-step--source">
-            <span className="step-number">01</span>
-            <File size={24} />
-            <h3>Generate naturally</h3>
-            <p>Your application or agent produces plain Markdown—the format it already knows best.</p>
-            <code>agent.run(prompt)</code>
-          </article>
-          <article className="workflow-step workflow-step--agent">
-            <span className="step-number">02</span>
-            <Terminal size={24} />
-            <h3>Render once</h3>
-            <p>Apply brand tokens and real typesetting without HTML templates, CSS print rules, or a browser pool.</p>
-            <code>pluma.render(markdown)</code>
-          </article>
-          <article className="workflow-step workflow-step--output">
-            <span className="step-number">03</span>
-            <span className="page-glyph" aria-hidden="true">P</span>
-            <h3>Deliver the value</h3>
-            <p>Send a consistent report, proposal, audit, or brief your customer can review and forward.</p>
-            <code>send(pdf)</code>
-          </article>
-        </div>
-      </section>
-
-      <section className="sdk-section section-space">
-        <div className="shell sdk-section__grid">
-          <div className="sdk-section__copy">
-            <h2>One API call replaces the PDF stack.</h2>
-            <p>The hosted API handles typesetting, isolation, limits, idempotency, and ephemeral processing. Your product keeps the content and customer workflow.</p>
-            <ul className="check-list">
-              <li><Check /> No Chromium process or browser pool</li>
-              <li><Check /> Brand tokens instead of HTML/CSS templates</li>
-              <li><Check /> REST, TypeScript, CLI, and MCP</li>
-              <li><Check /> Open-source locally, managed in production</li>
-            </ul>
-            <Link href="/docs/typescript" className="text-link">TypeScript quickstart <Arrow size={16} /></Link>
+        <section className="format-rail" aria-label="Markdown document workflow">
+          <div className="shell format-rail__inner">
+            <span>Your product</span><i aria-hidden="true">→</i><strong>Markdown</strong><i aria-hidden="true">→</i><strong className="is-output">Pluma</strong><i aria-hidden="true">→</i><span>A document worth sending</span>
           </div>
-          <CodeBlock code={sdkCode} title="agent.ts" />
-        </div>
-      </section>
+        </section>
 
-      <section className="local-section shell section-space">
-        <div className="local-intro">
-          <span className="open-source-stamp">MIT / OPEN SOURCE</span>
-          <h2>Own the engine. Skip the operations.</h2>
-          <p>The MIT-licensed engine remains free and unlimited. Use Cloud when running, isolating, metering, and scaling document generation stops being the work your customers pay for.</p>
-          <a href="https://github.com/ararahq/pluma" target="_blank" rel="noreferrer" className="button button--outline">View on GitHub <span aria-hidden="true">↗</span></a>
-        </div>
-        <div className="local-facts">
-          <div><strong>~25 ms</strong><span>example render after warm-up on an M-series Mac</span></div>
-          <div><strong>0</strong><span>browser dependencies</span></div>
-          <div><strong>4</strong><span>interfaces: REST, TS, CLI, MCP</span></div>
-        </div>
-      </section>
-
-      <section className="privacy-section section-space">
-        <div className="shell privacy-section__inner">
-          <div className="privacy-mark" aria-hidden="true"><span>P</span></div>
-          <div>
-            <h2>Ephemeral by default.</h2>
-            <p>Raw documents are processed for the request, then discarded. Request metadata never includes document content.</p>
+        <section className="burden-section shell section-space" data-reveal-section>
+          <div className="section-kicker">What disappears</div>
+          <div className="burden-section__grid">
+            <div><h2>A PDF should not require a browser fleet.</h2><p>Every workaround becomes infrastructure. The output improves; the operational surface gets smaller.</p></div>
+            <div className="burden-stack" aria-label="Work removed by Pluma">
+              <div><span>Remove</span><strong>Chromium lifecycle</strong><small>cold starts · crashes · memory</small></div>
+              <div><span>Remove</span><strong>Print CSS</strong><small>page breaks · margins · overflow</small></div>
+              <div><span>Remove</span><strong>Asset plumbing</strong><small>fonts · images · loading races</small></div>
+              <div className="burden-stack__contract"><span>Keep</span><strong>Markdown → PDF bytes</strong><small>one versioned rendering contract</small></div>
+            </div>
           </div>
-          <Link href="/docs/privacy" className="text-link">Privacy model <Arrow size={16} /></Link>
-        </div>
-      </section>
+        </section>
 
-      <section className="closing-cta shell section-space">
-        <div>
-          <h2>Ship the deliverable, not another dashboard.</h2>
-          <p>Start with the open-source engine. Move to the hosted API when documents become part of your customer experience.</p>
-        </div>
-        <div className="button-row">
-          <Link href="/sign-up" className="button button--large">Render your first PDF <Arrow /></Link>
-          <Link href="/pricing" className="text-link">Compare plans</Link>
-        </div>
-      </section>
+        <section className="deliverables-section section-space" data-reveal-section>
+          <div className="shell">
+            <div className="section-heading section-heading--split">
+              <div><p className="section-kicker">The actual product</p><h2>Your customer pays for the deliverable.</h2></div>
+              <p>Reports, audits, proposals, and briefs leave your app with enough structure to review, approve, and trust.</p>
+            </div>
+            <div className="deliverable-grid">
+              {deliverables.map(([number, title, copy]) => <article key={number} className={`deliverable deliverable--${number}`}><span>{number}</span><h3>{title}</h3><p>{copy}</p><File size={22} /></article>)}
+            </div>
+          </div>
+        </section>
+
+        <section className="sdk-section section-space" data-reveal-section>
+          <div className="shell sdk-section__grid">
+            <div className="sdk-section__copy">
+              <p className="section-kicker">A smaller contract</p><h2>Keep content generation where it belongs.</h2><p>Your agent writes. Pluma typesets. Your product owns the workflow.</p>
+              <ul className="check-list"><li><Check /> No Chromium or LaTeX runtime</li><li><Check /> Brand tokens, not print templates</li><li><Check /> REST, TypeScript, CLI, and MCP</li><li><Check /> Local engine or managed API</li></ul>
+              <Link href="/docs/typescript" className="text-link">Read the TypeScript quickstart <Arrow size={16} /></Link>
+            </div>
+            <CodeBlock code={sdkCode} title="report.ts" />
+          </div>
+        </section>
+
+        <section className="offer-section shell section-space" data-reveal-section>
+          <div className="section-heading section-heading--split"><div><p className="section-kicker">Start at your boundary</p><h2>Own the engine. Buy back the operations.</h2></div><p>The core stays open. Cloud becomes useful when rendering is part of the customer experience—not another service your team wants to operate.</p></div>
+          <div className="offer-grid">
+            <article className="offer-card offer-card--local"><div><Terminal /><span>Local / MIT</span></div><h3>No Pluma render quota on your compute.</h3><code>npm i @ararahq/pluma</code><p>Use the CLI or library, keep every byte inside your environment, and inspect the full engine.</p><a href="https://github.com/ararahq/pluma" target="_blank" rel="noreferrer" className="text-link">View the source <span aria-hidden="true">↗</span></a></article>
+            <article className="offer-card offer-card--cloud"><div><span className="cloud-pulse" aria-hidden="true" /><span>Managed / Cloud</span></div><h3>Send Markdown. Receive PDF.</h3><p>Hosted execution, isolation, quotas, idempotency, and API keys for production workflows.</p><Link href="/pricing" className="text-link">Compare plans <Arrow size={16} /></Link></article>
+          </div>
+        </section>
+
+        <section className="privacy-section section-space" data-reveal-section>
+          <div className="shell privacy-section__inner"><div className="privacy-index" aria-hidden="true">P/01</div><div><p className="section-kicker">A document is not telemetry</p><h2>Ephemeral by default.</h2><p>Raw input is not kept as document history. Successful idempotent responses may be encrypted for 15 minutes; operational metadata excludes document content.</p></div><Link href="/docs/privacy" className="text-link">Read the privacy model <Arrow size={16} /></Link></div>
+        </section>
+
+        <section className="closing-cta shell section-space" data-reveal-section><div><p className="section-kicker">One useful minute</p><h2>Give your Markdown a destination.</h2><p>Edit the example, render a real PDF, and decide from the artifact—not the pitch.</p></div><a href="#pluma-playground" onClick={focusInstrument} className="button button--large">Render your first PDF <Arrow /></a></section>
+      </div>
     </MarketingLayout>
   );
 }

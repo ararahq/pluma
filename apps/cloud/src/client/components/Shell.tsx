@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, navigate } from "../lib/router";
 import { api, type Session } from "../lib/api";
 import { Arrow, Close, Menu } from "./Icons";
@@ -15,6 +15,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     api.session().then(setSession).catch(() => setSession(null));
@@ -25,6 +26,17 @@ export function SiteHeader() {
     window.addEventListener("popstate", close);
     return () => window.removeEventListener("popstate", close);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
 
   return (
     <header className="site-header">
@@ -40,11 +52,12 @@ export function SiteHeader() {
           ) : (
             <>
               <Link href="/sign-in">Sign in</Link>
-              <Link className="button button--small" href="/sign-up">Start building <Arrow size={15} /></Link>
+              <a className="button button--small" href="/#pluma-playground">Render a PDF <Arrow size={15} /></a>
             </>
           )}
         </nav>
         <button
+          ref={menuButtonRef}
           type="button"
           className="menu-button"
           aria-label={open ? "Close navigation" : "Open navigation"}
