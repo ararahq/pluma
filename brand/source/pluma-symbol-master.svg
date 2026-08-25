@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Pluma Typesetting Gate</title>
+  <desc id="desc">Three source lines cross a controlled gate and leave as one document line.</desc>
+  <path fill="#111936" d="M21 41H64V52H21ZM21 75H73V86H21ZM21 109H64V120H21Z"/>
+  <path fill="#3D5AFE" d="M65 31H83L101 55V105L83 129H65L85 100V60Z"/>
+  <path fill="#111936" d="M96 75H139V86H96Z"/>
+</svg>

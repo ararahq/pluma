@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pluma brand system</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root { --midnight:#111936; --cobalt:#3d5afe; --ice:#f7f9ff; --steel:#9aa5c2; --line:#d8deef; }
+    body { margin:0; background:#070b18; color:var(--midnight); font-family:"Avenir Next",Avenir,"Segoe UI",sans-serif; }
+    main { width:min(1600px,100vw); min-height:100vh; margin:auto; padding:32px; background:#090e21; }
+    header { height:64px; display:flex; align-items:flex-start; justify-content:space-between; color:var(--ice); }
+    header p, .label, footer { margin:0; font:600 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em; text-transform:uppercase; }
+    header h1 { margin:5px 0 0; font-size:23px; letter-spacing:-.035em; }
+    header p, footer { color:#8390b2; }
+    .grid { display:grid; grid-template-columns:repeat(12,1fr); grid-template-rows:360px 270px 270px; gap:14px; }
+    .panel { position:relative; overflow:hidden; background:var(--ice); }
+    .panel::after { content:attr(data-index); position:absolute; right:18px; bottom:16px; color:#aab3cb; font:600 9px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.12em; }
+    .cover { grid-column:span 7; display:grid; place-items:center; padding:56px; }
+    .cover img { width:min(590px,90%); }
+    .cover .label { position:absolute; top:24px; left:26px; color:#71809f; }
+    .cover p { position:absolute; left:26px; bottom:24px; margin:0; color:#68738d; font-size:13px; }
+    .construction { grid-column:span 5; padding:24px; background-color:#eef2fb; background-image:linear-gradient(rgba(61,90,254,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(61,90,254,.09) 1px,transparent 1px); background-size:32px 32px; }
+    .construction .label { color:#4f61a6; }
+    .construction__mark { position:absolute; inset:44px 36px 34px; display:grid; place-items:center; }
+    .construction__mark img { width:220px; }
+    .axis { position:absolute; background:rgba(61,90,254,.26); }
+    .axis--x { left:28px; right:28px; top:50%; height:1px; }
+    .axis--y { top:28px; bottom:28px; left:50%; width:1px; }
+    .measure { position:absolute; color:#5369bf; font:600 9px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .measure--a { left:32px; bottom:28px; }.measure--b { right:28px; top:28px; }
+    .reverse { grid-column:span 5; display:grid; place-items:center; background:var(--midnight); }
+    .reverse img { width:76%; }
+    .reverse .label { position:absolute; top:22px; left:24px; color:#8390b2; }
+    .reverse::after { color:#536181; }
+    .endorsement { grid-column:span 4; display:grid; place-items:center; padding:34px; background:#fff; }
+    .endorsement img { width:min(300px,92%); }
+    .endorsement .label { position:absolute; top:22px; left:24px; color:#71809f; }
+    .icons { grid-column:span 3; display:flex; align-items:center; justify-content:center; gap:28px; padding:28px; background:#e9edfa; }
+    .icons .label { position:absolute; top:22px; left:24px; color:#71809f; }
+    .icon { display:grid; justify-items:center; gap:10px; color:#77839e; font:600 9px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .icon img { border-radius:22%; box-shadow:0 10px 28px rgba(17,25,54,.16); image-rendering:auto; }
+    .icon:nth-of-type(1) img { width:32px; }.icon:nth-of-type(2) img { width:64px; }.icon:nth-of-type(3) img { width:112px; }
+    .promise { grid-column:span 7; padding:34px; display:flex; flex-direction:column; justify-content:space-between; background:#fff; }
+    .promise h2 { max-width:650px; margin:0; font-size:54px; line-height:.98; letter-spacing:-.055em; font-weight:650; }
+    .promise h2 span { color:var(--cobalt); }
+    .promise p { max-width:580px; margin:0; color:#6c7690; font-size:15px; }
+    .system { grid-column:span 5; display:grid; grid-template-rows:1fr auto; background:#eff2fa; }
+    .palette { display:grid; grid-template-columns:1.2fr 1fr 1fr; }
+    .swatch { display:flex; align-items:flex-end; padding:20px; color:#fff; font:600 9px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.1em; }
+    .swatch:nth-child(1){background:var(--midnight)}.swatch:nth-child(2){background:var(--cobalt)}.swatch:nth-child(3){background:var(--ice);color:#68738d}
+    .type { min-height:92px; display:flex; align-items:center; justify-content:space-between; padding:20px 22px; border-top:1px solid var(--line); }
+    .type strong { font-size:34px; letter-spacing:-.05em; }.type span { color:#77839e; font:600 9px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.1em; text-transform:uppercase; }
+    footer { display:flex; justify-content:space-between; padding-top:17px; }
+    @media (max-width:900px) {
+      main { padding:18px; }.grid { display:flex; flex-direction:column; }.panel { min-height:300px; }.cover { min-height:420px; }.promise h2 { font-size:42px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header><div><p>Brand system / 01</p><h1>Pluma — Typesetting Gate</h1></div><p>by AraraHQ · 24.08.2026</p></header>
+    <section class="grid">
+      <article class="panel cover" data-index="01"><span class="label">Primary lockup</span><img src="dist/pluma-lockup-horizontal.svg" alt="Pluma"><p>The production document layer for AI products.</p></article>
+      <article class="panel construction" data-index="02"><span class="label">Construction / 160 × 160</span><i class="axis axis--x"></i><i class="axis axis--y"></i><div class="construction__mark"><img src="dist/pluma-symbol.svg" alt=""></div><span class="measure measure--a">SOURCE → GATE → ARTIFACT</span><span class="measure measure--b">11U RAIL</span></article>
+      <article class="panel reverse" data-index="03"><span class="label">Reverse lockup</span><img src="dist/pluma-lockup-horizontal-reverse.svg" alt="Pluma on midnight"></article>
+      <article class="panel endorsement" data-index="04"><span class="label">Commercial endorsement</span><img src="dist/pluma-lockup-endorsed-light.svg" alt="Pluma by AraraHQ"></article>
+      <article class="panel icons" data-index="05"><span class="label">Small-size system</span><div class="icon"><img src="dist/favicon.svg" alt=""><span>32</span></div><div class="icon"><img src="dist/favicon.svg" alt=""><span>64</span></div><div class="icon"><img src="dist/favicon.svg" alt=""><span>112</span></div></article>
+      <article class="panel promise" data-index="06"><span class="label">Brand promise</span><h2>Markdown crosses the gate.<br><span>A document leaves.</span></h2><p>One product action, one ownable symbol, and an endorsement that keeps both brands legible.</p></article>
+      <article class="panel system" data-index="07"><div class="palette"><div class="swatch">MIDNIGHT<br>#111936</div><div class="swatch">COBALT<br>#3D5AFE</div><div class="swatch">COLD WHITE<br>#F7F9FF</div></div><div class="type"><strong>Pluma</strong><span>Geist Bold / outlined</span></div></article>
+    </section>
+    <footer><span>Canonical source · deterministic derivatives</span><span>Pluma stands alone. AraraHQ endorses.</span></footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ararahq/pluma/schema/resource-budget-v1.json",
+  "title": "Pluma resource budget v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "memoryBytes": { "type": "integer", "minimum": 16777216 },
+    "spillBytes": { "type": "integer", "minimum": 0 },
+    "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 86400000 },
+    "temporaryDirectory": { "type": "string", "minLength": 1 }
+  }
+}

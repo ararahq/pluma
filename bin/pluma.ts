@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, statSync, watch, writeFileSync } from "node:fs"
+import { createReadStream, existsSync, readFileSync, statSync, watch, writeFileSync } from "node:fs"
 import { basename, dirname, extname, join, resolve } from "node:path"
 import { serveMcp } from "../src/mcp.js"
+import { createInterface } from "node:readline"
 import {
   renderPdf,
   markdownToTypstSource,
@@ -10,10 +11,17 @@ import {
   readPdf,
   readHtml,
   readUrl,
+  compileContext,
+  compileRows,
+  openContext,
+  exportWorkbook,
   type Brand,
   type RenderOptions,
   type ReadPdfOptions,
   type ReadHtmlOptions,
+  type ContextRow,
+  type ContextField,
+  type XlsxExportOptions,
 } from "../src/index.js"
 
 const HELP = `pluma — document I/O without a browser
@@ -25,6 +33,13 @@ Usage:
   pluma <https://...> [options]             URL -> Markdown (stdout)
   pluma mcp                  start an MCP server (stdio) with the tools
                              render_pdf, read_pdf, read_html, read_url
+  pluma context compile <file> -o <dataset.pluma>
+  pluma context compile-stream <schema.json> -o <dataset.pluma> < rows.ndjson
+  pluma context inspect <dataset.pluma> [--view schema]
+  pluma context explain <dataset.pluma> --plan <query.json>
+  pluma context query <dataset.pluma> --plan <query.json>
+  pluma context export <dataset.pluma> --format csv|xlsx|parquet -o <file>
+  pluma workbook <descriptor.json> [-o workbook.xlsx]
 
 Options (Markdown -> PDF):
   -o, --output <file>      PDF output path (default: <input>.pdf)
@@ -266,6 +281,8 @@ function watchLoop(args: CliArgs, inputPath: string): void {
 }
 
 export async function run(argv: string[]): Promise<number> {
+  if (argv[0] === "context") return runContext(argv.slice(1))
+  if (argv[0] === "workbook") return runWorkbook(argv.slice(1))
   let args: CliArgs
   try {
     args = parseArgs(argv)
@@ -319,6 +336,142 @@ export async function run(argv: string[]): Promise<number> {
     }
     return 1
   }
+}
+
+async function runWorkbook(argv: string[]): Promise<number> {
+  const descriptorPath = argv[0]
+  const outputIndex = Math.max(argv.indexOf("-o"), argv.indexOf("--output"))
+  const json = argv.includes("--json")
+  try {
+    if (!descriptorPath) throw new Error("Usage: pluma workbook <descriptor.json> [-o workbook.xlsx]")
+    const descriptor = JSON.parse(readFileSync(descriptorPath, "utf8")) as { output?: unknown; relations?: unknown }
+    if (!Array.isArray(descriptor.relations) || !descriptor.relations.length) throw new Error("descriptor.relations must be a non-empty array")
+    const root = dirname(resolve(descriptorPath))
+    const relations = descriptor.relations.map((value) => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Every workbook relation must be an object")
+      const relation = value as { name?: unknown; fields?: unknown; source?: unknown; xlsx?: unknown }
+      if (typeof relation.name !== "string" || !Array.isArray(relation.fields) || typeof relation.source !== "string") throw new Error("Every workbook relation requires name, fields, and an NDJSON source")
+      return { name: relation.name, fields: relation.fields as ContextField[], rows: readNdjsonFile(resolve(root, relation.source)), xlsx: relation.xlsx as XlsxExportOptions | undefined }
+    })
+    const output = outputIndex >= 0 ? argv[outputIndex + 1] : typeof descriptor.output === "string" ? resolve(root, descriptor.output) : resolve(root, "workbook.xlsx")
+    if (!output) throw new Error("Workbook output is required")
+    await exportWorkbook({ relations, output })
+    writeJsonSuccess({ output })
+    return 0
+  } catch (error) {
+    if (json) writeJsonError((error as Error).message)
+    else process.stderr.write(`${(error as Error).message}\n`)
+    return 1
+  }
+}
+
+async function* readNdjsonFile(path: string): AsyncGenerator<ContextRow> {
+  const lines = createInterface({ input: createReadStream(path), crlfDelay: Infinity })
+  for await (const line of lines) {
+    if (!line.trim()) continue
+    const value = JSON.parse(line) as unknown
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`Every NDJSON line in ${path} must be an object`)
+    yield value as ContextRow
+  }
+}
+
+async function runContext(argv: string[]): Promise<number> {
+  const [command, input] = argv
+  const value = (flag: string): string | undefined => { const index = argv.indexOf(flag); return index >= 0 ? argv[index + 1] : undefined }
+  const json = argv.includes("--json")
+  try {
+    if (!command || !input) throw new Error("Usage: pluma context <compile|compile-stream|inspect|explain|query|export> <input>")
+    const resourceBudget = {
+      memoryBytes: optionalPositiveFlag(value("--memory-bytes")),
+      spillBytes: optionalNonNegativeFlag(value("--spill-bytes")),
+      timeoutMs: optionalPositiveFlag(value("--timeout-ms")),
+    }
+    if (command === "compile") {
+      const output = value("-o") ?? value("--output") ?? `${resolve(input)}.pluma`
+      const indexesPath = value("--indexes")
+      const aggregatesPath = value("--aggregates")
+      const job = compileContext(input, { output, resourceBudget, indexes: indexesPath ? JSON.parse(readFileSync(indexesPath, "utf8")) : undefined, materializedAggregates: aggregatesPath ? JSON.parse(readFileSync(aggregatesPath, "utf8")) : undefined })
+      for await (const event of job.events()) if (!json) process.stderr.write(`${event.state}: ${event.rowsProcessed} rows\n`)
+      const manifest = await job.result()
+      writeJsonSuccess({ output, manifest })
+      return 0
+    }
+    if (command === "compile-stream") {
+      const output = value("-o") ?? value("--output")
+      if (!output) throw new Error("--output is required")
+      const relation = JSON.parse(readFileSync(input, "utf8"))
+      const job = compileRows(readNdjsonRows(), { output, relation, resourceBudget })
+      for await (const event of job.events()) if (!json) process.stderr.write(`${event.state}: ${event.rowsProcessed} rows\n`)
+      writeJsonSuccess({ output, manifest: await job.result() }); return 0
+    }
+    const context = openContext(input, { resourceBudget })
+    const tokenizerRaw = value("--tokenizer") ?? "o200k_base@1"
+    const [id, version] = tokenizerRaw.split("@")
+    if ((id !== "o200k_base" && id !== "cl100k_base") || (version ?? "1") !== "1") throw new Error("--tokenizer must be o200k_base@1 or cl100k_base@1")
+    const tokenizerId: "o200k_base" | "cl100k_base" = id
+    const tokenBudget = Number(value("--token-budget") ?? "8000")
+    if (!Number.isSafeInteger(tokenBudget) || tokenBudget < 256) throw new Error("--token-budget must be an integer of at least 256")
+    const budget = { tokenBudget, tokenizer: { id: tokenizerId, version: "1" as const } }
+    if (command === "inspect") {
+      const payload = context.inspect({ view: value("--view") === "schema" ? "schema" : "overview", ...budget })
+      writeJsonSuccess({ payload }); return 0
+    }
+    if (command === "query") {
+      const planPath = value("--plan")
+      if (!planPath) throw new Error("--plan <query.json> is required")
+      const plan = JSON.parse(readFileSync(planPath, "utf8"))
+      const format = value("--format") as "csv" | "xlsx" | "parquet" | undefined
+      const output = value("-o") ?? value("--output")
+      if (format || output) {
+        if (!format || !output) throw new Error("--format and --output must be used together")
+        const evidence = await context.exportQuery(plan, { format, output, resourceBudget })
+        writeJsonSuccess({ output, evidence }); return 0
+      }
+      const result = context.query(plan)
+      writeJsonSuccess({ payload: result.payload(budget) }); return 0
+    }
+    if (command === "explain") {
+      const planPath = value("--plan")
+      if (!planPath) throw new Error("--plan <query.json> is required")
+      writeJsonSuccess({ explanation: context.explain(JSON.parse(readFileSync(planPath, "utf8"))) }); return 0
+    }
+    if (command === "export") {
+      const format = value("--format") as "csv" | "xlsx" | "parquet" | undefined
+      const output = value("-o") ?? value("--output")
+      if (!format || !output) throw new Error("--format and --output are required")
+      await context.export({ relation: value("--relation"), format, output })
+      writeJsonSuccess({ output }); return 0
+    }
+    throw new Error(`Unknown context command: ${command}`)
+  } catch (error) {
+    if (json) writeJsonError((error as Error).message)
+    else process.stderr.write(`${(error as Error).message}\n`)
+    return 1
+  }
+}
+
+async function* readNdjsonRows(): AsyncGenerator<ContextRow> {
+  const lines = createInterface({ input: process.stdin, crlfDelay: Infinity })
+  for await (const line of lines) {
+    if (!line.trim()) continue
+    const value = JSON.parse(line) as unknown
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Every NDJSON line must be an object")
+    yield value as ContextRow
+  }
+}
+
+function optionalPositiveFlag(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined
+  const parsed = Number(value)
+  if (!Number.isSafeInteger(parsed) || parsed < 1) throw new Error("Resource flags must be positive integers")
+  return parsed
+}
+
+function optionalNonNegativeFlag(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined
+  const parsed = Number(value)
+  if (!Number.isSafeInteger(parsed) || parsed < 0) throw new Error("--spill-bytes must be a non-negative integer")
+  return parsed
 }
 
 function writeJsonSuccess<T extends object>(fields: T): void {

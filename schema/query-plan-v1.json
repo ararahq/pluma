@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ararahq/pluma/schema/query-plan-v1.json",
+  "title": "Pluma exact query plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "relation": { "type": "string", "minLength": 1 },
+    "select": { "type": "array", "maxItems": 10000, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "filter": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/filter" } },
+    "groupBy": { "type": "array", "maxItems": 32, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "metrics": { "type": "array", "maxItems": 64, "items": { "$ref": "#/$defs/metric" } },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+  },
+  "$defs": {
+    "filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["column", "op", "value"],
+      "properties": {
+        "column": { "type": "string", "minLength": 1 },
+        "op": { "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "in"] },
+        "value": {}
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aggregate", "as"],
+      "properties": {
+        "column": { "type": "string", "minLength": 1 },
+        "aggregate": { "enum": ["count", "sum", "min", "max", "avg"] },
+        "as": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

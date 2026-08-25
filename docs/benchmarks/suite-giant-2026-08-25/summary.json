@@ -1,0 +1,772 @@
+{
+  "format": "pluma-benchmark-suite",
+  "version": 1,
+  "profile": "giant",
+  "createdAt": "2026-08-25T17:06:11.391Z",
+  "cases": [
+    {
+      "id": "context-tiny-10",
+      "status": "passed",
+      "startedAt": "2026-08-25T16:53:41.314Z",
+      "report": {
+        "format": "pluma-context-benchmark",
+        "version": 3,
+        "createdAt": "2026-08-25T16:53:42.088Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "rows": 10,
+          "bytes": 176
+        },
+        "package": {
+          "bytes": 6862,
+          "ratioToInput": 38.99,
+          "fingerprint": "9c8723d55b20d489c8f067c07168500945a22f09f58c4543060bb28f747f95e6"
+        },
+        "compile": {
+          "elapsedMs": 59.86,
+          "rowsPerSecond": 167.05,
+          "bytesPerSecond": 2940.11,
+          "blocks": 1,
+          "rowCountCorrect": true
+        },
+        "queries": {
+          "point": {
+            "elapsedMs": 2.42,
+            "strategy": "index",
+            "blocks": 1,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 10,
+            "rowsMatched": 1,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 1,
+            "indexPagesRead": 2,
+            "keyComparisons": 4
+          },
+          "range": {
+            "elapsedMs": 0.47,
+            "strategy": "index",
+            "blocks": 1,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 10,
+            "rowsMatched": 10,
+            "rowsReturned": 10,
+            "correct": true,
+            "indexEntries": 1,
+            "indexPagesRead": 2,
+            "keyComparisons": 4
+          },
+          "covered": {
+            "elapsedMs": 0.15,
+            "strategy": "materialized_aggregate",
+            "blocks": 1,
+            "candidateBlocks": 0,
+            "blocksRead": 0,
+            "rowsScanned": 0,
+            "rowsMatched": 2,
+            "rowsReturned": 2,
+            "correct": true,
+            "indexEntries": 2,
+            "indexPagesRead": 2,
+            "keyComparisons": 2
+          },
+          "fullScan": {
+            "elapsedMs": 0.43,
+            "strategy": "full_scan",
+            "blocks": 1,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 10,
+            "rowsMatched": 10,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 0,
+            "indexPagesRead": 0,
+            "keyComparisons": 0
+          },
+          "tokenBudget": {
+            "elapsedMs": 487.25,
+            "tokenCost": 434,
+            "withinBudget": true,
+            "rowsReturned": 10
+          }
+        },
+        "processMaxRssBytes": 420397056
+      }
+    },
+    {
+      "id": "context-small-10000",
+      "status": "passed",
+      "startedAt": "2026-08-25T16:53:42.106Z",
+      "report": {
+        "format": "pluma-context-benchmark",
+        "version": 3,
+        "createdAt": "2026-08-25T16:53:43.256Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "rows": 10000,
+          "bytes": 189573
+        },
+        "package": {
+          "bytes": 248996,
+          "ratioToInput": 1.31,
+          "fingerprint": "12a714c429728deb4aa5a4fd0c512f0f5a6fc9e3d52bc3075a15b3e76be985aa"
+        },
+        "compile": {
+          "elapsedMs": 91.45,
+          "rowsPerSecond": 109350.82,
+          "bytesPerSecond": 2072996.22,
+          "blocks": 2,
+          "rowCountCorrect": true
+        },
+        "queries": {
+          "point": {
+            "elapsedMs": 6.95,
+            "strategy": "index",
+            "blocks": 2,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 1808,
+            "rowsMatched": 1,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 2,
+            "indexPagesRead": 3,
+            "keyComparisons": 5
+          },
+          "range": {
+            "elapsedMs": 4.83,
+            "strategy": "index",
+            "blocks": 2,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 1808,
+            "rowsMatched": 1000,
+            "rowsReturned": 1000,
+            "correct": true,
+            "indexEntries": 2,
+            "indexPagesRead": 3,
+            "keyComparisons": 5
+          },
+          "covered": {
+            "elapsedMs": 0.17,
+            "strategy": "materialized_aggregate",
+            "blocks": 2,
+            "candidateBlocks": 0,
+            "blocksRead": 0,
+            "rowsScanned": 0,
+            "rowsMatched": 2,
+            "rowsReturned": 2,
+            "correct": true,
+            "indexEntries": 2,
+            "indexPagesRead": 2,
+            "keyComparisons": 2
+          },
+          "fullScan": {
+            "elapsedMs": 20.04,
+            "strategy": "full_scan",
+            "blocks": 2,
+            "candidateBlocks": 2,
+            "blocksRead": 2,
+            "rowsScanned": 10000,
+            "rowsMatched": 10000,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 0,
+            "indexPagesRead": 0,
+            "keyComparisons": 0
+          },
+          "tokenBudget": {
+            "elapsedMs": 820.18,
+            "tokenCost": 1226,
+            "withinBudget": true,
+            "rowsReturned": 50
+          }
+        },
+        "processMaxRssBytes": 634126336
+      }
+    },
+    {
+      "id": "context-medium-1000000",
+      "status": "passed",
+      "startedAt": "2026-08-25T16:53:43.277Z",
+      "report": {
+        "format": "pluma-context-benchmark",
+        "version": 3,
+        "createdAt": "2026-08-25T16:53:48.945Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "rows": 1000000,
+          "bytes": 20954631
+        },
+        "package": {
+          "bytes": 24291507,
+          "ratioToInput": 1.16,
+          "fingerprint": "cd90492f776ae1673d52bbc81ce0c959dc8cd08f38a6cfc80573d9a56143feeb"
+        },
+        "compile": {
+          "elapsedMs": 2649.15,
+          "rowsPerSecond": 377480.11,
+          "bytesPerSecond": 7909956.4,
+          "blocks": 123,
+          "rowCountCorrect": true
+        },
+        "queries": {
+          "point": {
+            "elapsedMs": 4.39,
+            "strategy": "index",
+            "blocks": 123,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 576,
+            "rowsMatched": 1,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 123,
+            "indexPagesRead": 8,
+            "keyComparisons": 10
+          },
+          "range": {
+            "elapsedMs": 16.79,
+            "strategy": "index",
+            "blocks": 123,
+            "candidateBlocks": 2,
+            "blocksRead": 2,
+            "rowsScanned": 8768,
+            "rowsMatched": 1000,
+            "rowsReturned": 1000,
+            "correct": true,
+            "indexEntries": 123,
+            "indexPagesRead": 8,
+            "keyComparisons": 13
+          },
+          "covered": {
+            "elapsedMs": 0.2,
+            "strategy": "materialized_aggregate",
+            "blocks": 123,
+            "candidateBlocks": 0,
+            "blocksRead": 0,
+            "rowsScanned": 0,
+            "rowsMatched": 2,
+            "rowsReturned": 2,
+            "correct": true,
+            "indexEntries": 2,
+            "indexPagesRead": 2,
+            "keyComparisons": 2
+          },
+          "fullScan": {
+            "elapsedMs": 1671.09,
+            "strategy": "full_scan",
+            "blocks": 123,
+            "candidateBlocks": 123,
+            "blocksRead": 123,
+            "rowsScanned": 1000000,
+            "rowsMatched": 1000000,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 0,
+            "indexPagesRead": 0,
+            "keyComparisons": 0
+          },
+          "tokenBudget": {
+            "elapsedMs": 778.03,
+            "tokenCost": 1220,
+            "withinBudget": true,
+            "rowsReturned": 50
+          }
+        },
+        "processMaxRssBytes": 586399744
+      }
+    },
+    {
+      "id": "context-large-10000000",
+      "status": "passed",
+      "startedAt": "2026-08-25T16:53:48.965Z",
+      "report": {
+        "format": "pluma-context-benchmark",
+        "version": 3,
+        "createdAt": "2026-08-25T16:54:34.463Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "rows": 10000000,
+          "bytes": 219546059
+        },
+        "package": {
+          "bytes": 242863212,
+          "ratioToInput": 1.11,
+          "fingerprint": "d1254ac5b115305daa26460b6152fe486bcd02522ccb337feb3dbe0a85fbe76c"
+        },
+        "compile": {
+          "elapsedMs": 23960.43,
+          "rowsPerSecond": 417354.74,
+          "bytesPerSecond": 9162858.82,
+          "blocks": 1221,
+          "rowCountCorrect": true
+        },
+        "queries": {
+          "point": {
+            "elapsedMs": 13.89,
+            "strategy": "index",
+            "blocks": 1221,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 5760,
+            "rowsMatched": 1,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 1221,
+            "indexPagesRead": 12,
+            "keyComparisons": 14
+          },
+          "range": {
+            "elapsedMs": 11.09,
+            "strategy": "index",
+            "blocks": 1221,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 5760,
+            "rowsMatched": 1000,
+            "rowsReturned": 1000,
+            "correct": true,
+            "indexEntries": 1221,
+            "indexPagesRead": 12,
+            "keyComparisons": 14
+          },
+          "covered": {
+            "elapsedMs": 0.2,
+            "strategy": "materialized_aggregate",
+            "blocks": 1221,
+            "candidateBlocks": 0,
+            "blocksRead": 0,
+            "rowsScanned": 0,
+            "rowsMatched": 2,
+            "rowsReturned": 2,
+            "correct": true,
+            "indexEntries": 2,
+            "indexPagesRead": 2,
+            "keyComparisons": 2
+          },
+          "fullScan": {
+            "elapsedMs": 16998.23,
+            "strategy": "full_scan",
+            "blocks": 1221,
+            "candidateBlocks": 1221,
+            "blocksRead": 1221,
+            "rowsScanned": 10000000,
+            "rowsMatched": 10000000,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 0,
+            "indexPagesRead": 0,
+            "keyComparisons": 0
+          },
+          "tokenBudget": {
+            "elapsedMs": 785.56,
+            "tokenCost": 1283,
+            "withinBudget": true,
+            "rowsReturned": 50
+          }
+        },
+        "processMaxRssBytes": 688521216
+      }
+    },
+    {
+      "id": "context-giant-100000000",
+      "status": "passed",
+      "startedAt": "2026-08-25T16:54:34.567Z",
+      "report": {
+        "format": "pluma-context-benchmark",
+        "version": 3,
+        "createdAt": "2026-08-25T17:02:58.902Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "rows": 100000000,
+          "bytes": 2295460345
+        },
+        "package": {
+          "bytes": 2428673386,
+          "ratioToInput": 1.06,
+          "fingerprint": "aa2f632d295c417637b2d334a292fe4452a7f28394666412c3a710c2da573e9b"
+        },
+        "compile": {
+          "elapsedMs": 261911.86,
+          "rowsPerSecond": 381807.83,
+          "bytesPerSecond": 8764247.29,
+          "blocks": 12208,
+          "rowCountCorrect": true
+        },
+        "queries": {
+          "point": {
+            "elapsedMs": 8.26,
+            "strategy": "index",
+            "blocks": 12208,
+            "candidateBlocks": 1,
+            "blocksRead": 1,
+            "rowsScanned": 256,
+            "rowsMatched": 1,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 12208,
+            "indexPagesRead": 15,
+            "keyComparisons": 17
+          },
+          "range": {
+            "elapsedMs": 18.02,
+            "strategy": "index",
+            "blocks": 12208,
+            "candidateBlocks": 2,
+            "blocksRead": 2,
+            "rowsScanned": 8448,
+            "rowsMatched": 1000,
+            "rowsReturned": 1000,
+            "correct": true,
+            "indexEntries": 12208,
+            "indexPagesRead": 15,
+            "keyComparisons": 19
+          },
+          "covered": {
+            "elapsedMs": 0.76,
+            "strategy": "materialized_aggregate",
+            "blocks": 12208,
+            "candidateBlocks": 0,
+            "blocksRead": 0,
+            "rowsScanned": 0,
+            "rowsMatched": 2,
+            "rowsReturned": 2,
+            "correct": true,
+            "indexEntries": 2,
+            "indexPagesRead": 2,
+            "keyComparisons": 2
+          },
+          "fullScan": {
+            "elapsedMs": 201416.65,
+            "strategy": "full_scan",
+            "blocks": 12208,
+            "candidateBlocks": 12208,
+            "blocksRead": 12208,
+            "rowsScanned": 100000000,
+            "rowsMatched": 100000000,
+            "rowsReturned": 1,
+            "correct": true,
+            "indexEntries": 0,
+            "indexPagesRead": 0,
+            "keyComparisons": 0
+          },
+          "tokenBudget": {
+            "elapsedMs": 1568.54,
+            "tokenCost": 1272,
+            "withinBudget": true,
+            "rowsReturned": 50
+          }
+        },
+        "processMaxRssBytes": 577126400
+      }
+    },
+    {
+      "id": "stream-formats-small-10000",
+      "status": "passed",
+      "startedAt": "2026-08-25T17:03:00.965Z",
+      "report": {
+        "format": "pluma-stream-export-benchmark",
+        "version": 1,
+        "createdAt": "2026-08-25T17:03:02.335Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "kind": "async-iterable-database-simulation",
+          "rows": 10000
+        },
+        "compile": {
+          "elapsedMs": 118.7,
+          "rowsPerSecond": 84243.31,
+          "memoryBudgetBytes": 134217728,
+          "rowCountCorrect": true
+        },
+        "indexedPoint": {
+          "rowsScanned": 1808,
+          "expectedComplexity": "O(log N + K)"
+        },
+        "outputs": [
+          {
+            "format": "csv",
+            "bytes": 189573,
+            "exportElapsedMs": 45.49,
+            "exportRowsPerSecond": 219847.66,
+            "importElapsedMs": 63.04,
+            "importRowsPerSecond": 158641.82,
+            "roundtripRows": 10000,
+            "correct": true
+          },
+          {
+            "format": "xlsx",
+            "bytes": 228348,
+            "exportElapsedMs": 154.31,
+            "exportRowsPerSecond": 64805.38,
+            "importElapsedMs": 237.74,
+            "importRowsPerSecond": 42063.43,
+            "roundtripRows": 10000,
+            "correct": true
+          },
+          {
+            "format": "parquet",
+            "bytes": 81250,
+            "exportElapsedMs": 57.06,
+            "exportRowsPerSecond": 175252.33,
+            "importElapsedMs": 152.45,
+            "importRowsPerSecond": 65595.58,
+            "roundtripRows": 10000,
+            "correct": true
+          }
+        ],
+        "processMaxRssBytes": 209272832
+      }
+    },
+    {
+      "id": "stream-formats-medium-1000000",
+      "status": "passed",
+      "startedAt": "2026-08-25T17:03:02.357Z",
+      "report": {
+        "format": "pluma-stream-export-benchmark",
+        "version": 1,
+        "createdAt": "2026-08-25T17:03:37.549Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "kind": "async-iterable-database-simulation",
+          "rows": 1000000
+        },
+        "compile": {
+          "elapsedMs": 1984.41,
+          "rowsPerSecond": 503929.15,
+          "memoryBudgetBytes": 134217728,
+          "rowCountCorrect": true
+        },
+        "indexedPoint": {
+          "rowsScanned": 576,
+          "expectedComplexity": "O(log N + K)"
+        },
+        "outputs": [
+          {
+            "format": "csv",
+            "bytes": 20954631,
+            "exportElapsedMs": 4020.69,
+            "exportRowsPerSecond": 248713.42,
+            "importElapsedMs": 2469.9,
+            "importRowsPerSecond": 404874.6,
+            "roundtripRows": 1000000,
+            "correct": true
+          },
+          {
+            "format": "xlsx",
+            "bytes": 24162837,
+            "exportElapsedMs": 13095.35,
+            "exportRowsPerSecond": 76362.98,
+            "importElapsedMs": 7393.13,
+            "importRowsPerSecond": 135260.67,
+            "roundtripRows": 1000000,
+            "correct": true
+          },
+          {
+            "format": "parquet",
+            "bytes": 8071450,
+            "exportElapsedMs": 3520.85,
+            "exportRowsPerSecond": 284022.53,
+            "importElapsedMs": 2379.49,
+            "importRowsPerSecond": 420258.65,
+            "roundtripRows": 1000000,
+            "correct": true
+          }
+        ],
+        "processMaxRssBytes": 524582912
+      }
+    },
+    {
+      "id": "stream-formats-large-10000000",
+      "status": "passed",
+      "startedAt": "2026-08-25T17:03:37.622Z",
+      "report": {
+        "format": "pluma-stream-export-benchmark",
+        "version": 1,
+        "createdAt": "2026-08-25T17:06:06.927Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "kind": "async-iterable-database-simulation",
+          "rows": 10000000
+        },
+        "compile": {
+          "elapsedMs": 14622.44,
+          "rowsPerSecond": 683880.6,
+          "memoryBudgetBytes": 134217728,
+          "rowCountCorrect": true
+        },
+        "indexedPoint": {
+          "rowsScanned": 5760,
+          "expectedComplexity": "O(log N + K)"
+        },
+        "outputs": [
+          {
+            "format": "csv",
+            "bytes": 219546059,
+            "exportElapsedMs": 38406.07,
+            "exportRowsPerSecond": 260375.53,
+            "importElapsedMs": 30686.96,
+            "importRowsPerSecond": 325871.28,
+            "roundtripRows": 10000000,
+            "correct": true
+          },
+          {
+            "format": "parquet",
+            "bytes": 80715174,
+            "exportElapsedMs": 40160.49,
+            "exportRowsPerSecond": 249000.97,
+            "importElapsedMs": 24507.69,
+            "importRowsPerSecond": 408035.18,
+            "roundtripRows": 10000000,
+            "correct": true
+          }
+        ],
+        "processMaxRssBytes": 506888192
+      }
+    },
+    {
+      "id": "documents-small-10",
+      "status": "passed",
+      "startedAt": "2026-08-25T17:06:07.508Z",
+      "report": {
+        "format": "pluma-document-benchmark",
+        "version": 1,
+        "createdAt": "2026-08-25T17:06:08.421Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "paragraphs": 10,
+          "markdownBytes": 1135,
+          "htmlBytes": 906
+        },
+        "markdownToPdf": {
+          "coldElapsedMs": 330.05,
+          "warmRuns": 5,
+          "warmMeanMs": 26.45,
+          "warmP95Ms": 27.01,
+          "outputBytes": 42156,
+          "correct": true
+        },
+        "pdfToMarkdown": {
+          "elapsedMs": 10.64,
+          "outputBytes": 915,
+          "correct": true
+        },
+        "htmlToMarkdown": {
+          "elapsedMs": 3.34,
+          "outputBytes": 477,
+          "correct": true
+        },
+        "processMaxRssBytes": 192479232
+      }
+    },
+    {
+      "id": "documents-large-1000",
+      "status": "passed",
+      "startedAt": "2026-08-25T17:06:08.432Z",
+      "report": {
+        "format": "pluma-document-benchmark",
+        "version": 1,
+        "createdAt": "2026-08-25T17:06:11.369Z",
+        "hardware": {
+          "cpu": "Apple M3",
+          "logicalCpus": 8,
+          "totalMemoryBytes": 17179869184,
+          "platform": "darwin",
+          "release": "27.0.0",
+          "node": "v24.5.0"
+        },
+        "input": {
+          "paragraphs": 1000,
+          "markdownBytes": 111745,
+          "htmlBytes": 90816
+        },
+        "markdownToPdf": {
+          "coldElapsedMs": 442.5,
+          "warmRuns": 5,
+          "warmMeanMs": 420.82,
+          "warmP95Ms": 434.09,
+          "outputBytes": 2813958,
+          "correct": true
+        },
+        "pdfToMarkdown": {
+          "elapsedMs": 152.4,
+          "outputBytes": 66845,
+          "correct": true
+        },
+        "htmlToMarkdown": {
+          "elapsedMs": 23.93,
+          "outputBytes": 49797,
+          "correct": true
+        },
+        "processMaxRssBytes": 490848256
+      }
+    }
+  ]
+}

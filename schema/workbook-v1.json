@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pluma.ararahq.com/schema/workbook-v1.json",
+  "title": "Pluma tabular and multi-relation workbook metadata",
+  "$defs": {
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "type", "nullable"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["string", "boolean", "int64", "float64", "decimal", "date", "timestamp", "binary", "json"] },
+        "nullable": { "type": "boolean" }
+      }
+    },
+    "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "version", "fields"],
+      "properties": {
+        "format": { "const": "pluma-tabular-schema" },
+        "version": { "const": 1 },
+        "fields": { "$ref": "#/$defs/fields" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "version", "relations"],
+      "properties": {
+        "format": { "const": "pluma-workbook-schema" },
+        "version": { "const": 1 },
+        "relations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "sheetName", "fields"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "sheetName": { "type": "string", "minLength": 1, "maxLength": 31 },
+              "fields": { "$ref": "#/$defs/fields" }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

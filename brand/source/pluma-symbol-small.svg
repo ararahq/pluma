@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" role="img" aria-labelledby="title desc">
+  <title id="title">Pluma Typesetting Gate small-size master</title>
+  <desc id="desc">Pixel-hinted Pluma symbol for sizes from 16 to 32 pixels.</desc>
+  <path fill="#F7F9FF" d="M1 3H6V5H1ZM1 7H7V9H1ZM1 11H6V13H1Z"/>
+  <path fill="#5B75FF" d="M6 2H8L11 5V11L8 14H6L9 11V5Z"/>
+  <path fill="#F7F9FF" d="M10 7H15V9H10Z"/>
+</svg>

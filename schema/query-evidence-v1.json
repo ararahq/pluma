@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ararahq/pluma/schema/query-evidence-v1.json",
+  "title": "Pluma query evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["packageFingerprint", "relationId", "planHash", "inputBlocks", "candidateBlocks", "blocksRead", "rowsMatched", "rowsScanned", "rowsReturned", "strategy"],
+  "properties": {
+    "packageFingerprint": { "$ref": "#/$defs/hash" },
+    "relationId": { "type": "string", "minLength": 1 },
+    "planHash": { "$ref": "#/$defs/hash" },
+    "inputBlocks": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+    "candidateBlocks": { "type": "array", "items": { "$ref": "#/$defs/hash" }, "uniqueItems": true },
+    "blocksRead": { "type": "integer", "minimum": 0 },
+    "rowsMatched": { "type": "integer", "minimum": 0 },
+    "rowsScanned": { "type": "integer", "minimum": 0 },
+    "rowsReturned": { "type": "integer", "minimum": 0 },
+    "strategy": { "enum": ["index", "materialized_aggregate", "pruned_scan", "full_scan"] },
+    "structureId": { "type": "string", "minLength": 1 },
+    "indexEntries": { "type": "integer", "minimum": 0 },
+    "indexPagesRead": { "type": "integer", "minimum": 0 },
+    "keyComparisons": { "type": "integer", "minimum": 0 }
+  },
+  "$defs": { "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}
