@@ -212,6 +212,36 @@ export {
   PdfStructureError,
   PdfEncryptedError,
 } from "./read/index.js"
+
+export { compileContext, compileRows, ContextCompileJob, StreamContextCompileJob } from "./context/compile.js"
+export type { CompileOptions, CompileRowsOptions } from "./context/compile.js"
+export { openContext, PlumaContext, QueryResult, QueryStreamResult } from "./context/runtime.js"
+export { ContextPackageReader, ContextPackageWriter } from "./context/package.js"
+export { exportRows, exportData, exportWorkbook } from "./context/export.js"
+export type { ExportFormat, ExportRowsOptions, ExportWorkbookOptions, WorkbookRelation, XlsxExportOptions } from "./context/export.js"
+export { ContextError, PLUMA_CONTEXT_VERSION, PLUMA_CONTEXT_LEGACY_VERSION } from "./context/types.js"
+export type {
+  ContextManifest,
+  ContextRelation,
+  ContextField,
+  ContextBlock,
+  ContextRow,
+  ContextBatch,
+  ContextPayload,
+  CompileEvent,
+  CompileState,
+  QueryPlan,
+  QueryProvenance,
+  TokenBudget,
+  TokenizerSpec,
+  ResourceBudget,
+  ResolvedResourceBudget,
+  ResumableRowSource,
+  QueryExplanation,
+  QueryStrategy,
+  IndexDefinition,
+  MaterializedAggregateDefinition,
+} from "./context/types.js"
 export type {
   ReadResult as ReadPdfResult,
   ReadPdfOptions,

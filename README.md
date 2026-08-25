@@ -1,12 +1,94 @@
 # pluma
 
-**Turn Markdown into a document people can send.** Pluma is an open-source document engine for generating branded, production-ready PDFs without Chromium or LaTeX.
+**The context and export engine for datasets too large for AI.** Pluma compiles CSV, XLSX, and Parquet into an integrity-checked `.pluma` package, exposes only the exact context an agent asks for, records the blocks used as provenance, and streams the result back to CSV, XLSX, or Parquet.
 
-Your application or agent already produces Markdown. Pluma turns it into the report, proposal, audit, invoice, or brief your customer actually receives. It renders through [Typst](https://typst.app) with real typography and needs no browser, LaTeX, Python process, external binary, or hosted dependency.
+The same package includes Pluma Docs: the original open-source Markdown-to-PDF engine, with real typography and no Chromium, LaTeX, Python process, external binary, or hosted dependency.
 
 ```bash
 npm install @ararahq/pluma
 ```
+
+## Dataset quickstart
+
+```bash
+pluma context compile transactions.csv -o transactions.pluma
+pluma context inspect transactions.pluma --view schema --token-budget 2000 --tokenizer o200k_base
+pluma context query transactions.pluma --plan query.json --token-budget 4000 --tokenizer o200k_base
+pluma context export transactions.pluma -o result.parquet --format parquet
+```
+
+From Node:
+
+```ts
+import { compileContext, openContext } from "@ararahq/pluma"
+
+const job = compileContext("transactions.csv", { output: "transactions.pluma" })
+for await (const progress of job.events()) console.error(progress)
+await job.result()
+
+const context = openContext("transactions.pluma")
+const result = context.query({
+  filter: [{ column: "status", op: "eq", value: "paid" }],
+  groupBy: ["country"],
+  metrics: [{ column: "amount", aggregate: "sum", as: "revenue" }],
+  limit: 100,
+})
+
+console.log(result.payload({
+  tokenBudget: 4_000,
+  tokenizer: { id: "o200k_base", version: "1" },
+}))
+```
+
+Stream directly from a database or cursor without collecting the result set:
+
+```ts
+import { compileRows } from "@ararahq/pluma"
+
+const source = {
+  identity: { snapshot: transactionSnapshot, fingerprint: `sha256:${snapshotHash}` },
+  open: (cursor?: string) => database.stream(
+    "SELECT id, status, amount FROM transactions WHERE id > ? ORDER BY id",
+    [cursor ?? "0"],
+  ),
+  cursor: (row: { id: bigint }) => String(row.id),
+}
+
+await compileRows(source, {
+  output: "transactions.pluma",
+  relation: { id: "transactions", name: "Transactions", fields },
+  indexes: [{ columns: ["id"] }],
+  materializedAggregates: [{
+    groupBy: ["status"],
+    metrics: [{ column: "amount", aggregate: "sum", as: "total" }],
+  }],
+}).result()
+```
+
+`context.explain(plan)` makes complexity visible before execution. A compatible ordered index selects candidates in `O(log N + K)`; a declared exact aggregate is looked up in `O(log N + G)`. Exact arbitrary aggregates that are not covered still report `full_scan` and execute in `O(N)`—Pluma never labels a scan logarithmic.
+
+For large outputs, `context.queryStream(plan)` and `context.exportQuery(plan, { format, output })` preserve backpressure and return evidence without materializing every result row in the application heap.
+
+The compiler hashes sources incrementally, writes bounded Arrow IPC blocks, commits packages atomically, and verifies every artifact before reading it. Query results include the package fingerprint, normalized plan hash, blocks read, and row counts. Token budgets use the named tokenizer rather than a character-count estimate.
+
+### Open format
+
+A `.pluma` package is a normal directory, not a proprietary binary:
+
+```text
+transactions.pluma/
+  manifest.json
+  blocks/*.arrow
+  views/overview.md
+  views/schema.md
+  provenance/source.json
+```
+
+The manifest and package runtime are MIT. You can inspect, verify, move, or rebuild a package without Pluma Cloud.
+
+See the versioned [capability and complexity matrix](docs/capabilities.md) for the exact Node, CLI, MCP, and Cloud surface.
+
+## Pluma Docs
 
 Built for developers shipping customer-facing deliverables: invoices, proposals, reports, audits, contracts, changelogs — and LLM output, which is already Markdown.
 
@@ -16,7 +98,7 @@ machine that will execute your workload: results vary by document and hardware.
 When Chrome is installed the script also reports a separate headless-print timing;
 it does not claim output parity, process cold-start time, or memory measurements.
 
-## Quickstart
+### Document quickstart
 
 ```bash
 pluma document.md
@@ -173,6 +255,8 @@ const remote = await readUrl("https://example.com/post", { maxTokens: 4_000 })
 
 `readHtml` and `readUrl` extract the main article or page content, preserve semantic structures such as code and tables, resolve relative links, and return title, canonical URL, author, dates, JSON-LD, links, word count, and warnings.
 
+`readUrl` fetches and parses the HTML response without launching a browser or executing JavaScript. Server-rendered pages and articles are extracted directly; client-rendered SPA shells may contain only their loading placeholder and metadata. Use a browser-capable upstream when the target requires JavaScript, then pass the resulting HTML to `readHtml`.
+
 ```bash
 pluma report.pdf                         # writes report.md
 pluma page.html -o page.md              # local HTML to Markdown
@@ -269,7 +353,7 @@ Node 20+ (or Bun). The Typst engine ships as a prebuilt native binding for macOS
 
 ## Pluma Cloud
 
-The repository also contains the hosted product: REST API, typed TypeScript SDK, accounts, API keys, page-unit quotas, Stripe billing, dashboard, and an isolated Linux document worker. See the vendor-neutral [deployment runbook](docs/deployment.md). Pluma Cloud v1 deliberately runs as one application replica because admission and rate limits are process-local; Postgres may be managed separately.
+The managed product handles direct uploads, durable jobs, isolated workers, encrypted object storage, retention, API keys, billing, and downloadable exports. The open-source compiler remains useful by itself; Cloud is for teams that do not want to operate the queue, storage, worker isolation, retries, upgrades, or access controls.
 
 ## License
 

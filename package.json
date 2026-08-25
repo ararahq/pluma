@@ -1,14 +1,10 @@
 {
   "name": "@ararahq/pluma",
-  "version": "0.2.0",
+  "version": "0.4.2",
   "mcpName": "io.github.ararahq/pluma",
-  "description": "Turn Markdown into branded, production-ready PDFs without Chromium or LaTeX.",
+  "description": "Bounded context and streaming exports for datasets too large for AI, plus browserless Markdown to PDF.",
   "license": "MIT",
   "type": "module",
-  "workspaces": [
-    "apps/cloud",
-    "packages/*"
-  ],
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "bin": {
@@ -23,22 +19,25 @@
     "THIRD_PARTY_LICENSES",
     "examples/fonts/LICENSE-Geist.txt",
     "docs/deployment.md",
+    "docs/capabilities.md",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "npm-shrinkwrap.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "build:all": "npm run build && npm --workspace @ararahq/pluma-cloud run build && npm --workspace @pluma/cloud run build",
+    "build:all": "npm run build",
+    "prepack": "node scripts/patch-exceljs-uuid.mjs",
     "typecheck": "tsc --noEmit",
-    "typecheck:all": "npm run typecheck && npm --workspace @ararahq/pluma-cloud run typecheck && npm --workspace @pluma/cloud run typecheck",
+    "typecheck:all": "npm run typecheck",
     "test": "bun test ./test/",
-    "test:all": "npm run test && npm --workspace @ararahq/pluma-cloud run test && npm --workspace @pluma/cloud run test",
-    "cloud:dev": "npm --workspace @pluma/cloud run dev",
-    "cloud:migrate": "npm --workspace @pluma/cloud run migrate",
-    "cloud:start": "npm --workspace @pluma/cloud run start",
+    "test:all": "npm run test",
     "prepublishOnly": "npm test && tsc -p tsconfig.build.json",
-    "bench": "node bench/render.mjs"
+    "bench": "node bench/render.mjs",
+    "bench:context": "npm run build && node bench/context.mjs",
+    "bench:suite": "npm run build && node bench/suite.mjs",
+    "brand:check": "node brand/scripts/check-brand.mjs"
   },
   "keywords": [
     "markdown",
@@ -48,19 +47,33 @@
     "document-extraction",
     "typst",
     "typography",
-    "no-browser"
+    "no-browser",
+    "csv",
+    "xlsx",
+    "parquet",
+    "llm-context",
+    "data-export"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ararahq/pluma"
+    "url": "git+https://github.com/ararahq/pluma.git"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "@myriaddreamin/typst-ts-node-compiler": "^0.7.0",
+    "apache-arrow": "^21.2.0",
+    "exceljs": "^4.4.0",
+    "hyparquet": "^1.29.1",
+    "hyparquet-writer": "^0.16.6",
+    "hysnappy": "^1.1.1",
+    "js-tiktoken": "^1.0.21",
     "marked": "^18.0.0"
   },
+  "bundledDependencies": [
+    "exceljs"
+  ],
   "devDependencies": {
     "@types/bun": "^1.3.14",
     "typescript": "^5.9.3"
@@ -72,5 +85,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
   }
 }

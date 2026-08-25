@@ -2,17 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.ararahq/pluma",
   "title": "Pluma",
-  "description": "Read text-layer PDFs, HTML, and public URLs into Markdown, then render Markdown as production-ready PDF.",
+  "description": "Compile CSV, XLSX, and Parquet into bounded context with provenance and exports; read sources and render Markdown as PDF.",
   "repository": {
     "url": "https://github.com/ararahq/pluma",
     "source": "github"
   },
-  "version": "0.2.0",
+  "version": "0.4.2",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@ararahq/pluma",
-      "version": "0.2.0",
+      "version": "0.4.2",
       "packageArguments": [
         {
           "type": "positional",

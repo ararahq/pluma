@@ -1,0 +1,37 @@
+{
+  "format": "pluma-document-benchmark",
+  "version": 1,
+  "createdAt": "2026-08-25T16:53:24.475Z",
+  "hardware": {
+    "cpu": "Apple M3",
+    "logicalCpus": 8,
+    "totalMemoryBytes": 17179869184,
+    "platform": "darwin",
+    "release": "27.0.0",
+    "node": "v24.5.0"
+  },
+  "input": {
+    "paragraphs": 1000,
+    "markdownBytes": 111745,
+    "htmlBytes": 90816
+  },
+  "markdownToPdf": {
+    "coldElapsedMs": 475.54,
+    "warmRuns": 5,
+    "warmMeanMs": 383.86,
+    "warmP95Ms": 426.27,
+    "outputBytes": 2813958,
+    "correct": true
+  },
+  "pdfToMarkdown": {
+    "elapsedMs": 118.22,
+    "outputBytes": 66845,
+    "correct": true
+  },
+  "htmlToMarkdown": {
+    "elapsedMs": 20.9,
+    "outputBytes": 49797,
+    "correct": true
+  },
+  "processMaxRssBytes": 483835904
+}
