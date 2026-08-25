@@ -1,0 +1,94 @@
+{
+  "format": "pluma-context-benchmark",
+  "version": 3,
+  "createdAt": "2026-08-25T16:52:06.685Z",
+  "hardware": {
+    "cpu": "Apple M3",
+    "logicalCpus": 8,
+    "totalMemoryBytes": 17179869184,
+    "platform": "darwin",
+    "release": "27.0.0",
+    "node": "v24.5.0"
+  },
+  "input": {
+    "rows": 1000000,
+    "bytes": 20954631
+  },
+  "package": {
+    "bytes": 24291507,
+    "ratioToInput": 1.16,
+    "fingerprint": "358896e7f7a596ce266d4f21bb12a9ae54ec406f95810095185fdf38e7825341"
+  },
+  "compile": {
+    "elapsedMs": 2576.59,
+    "rowsPerSecond": 388109.76,
+    "bytesPerSecond": 8132696.8,
+    "blocks": 123,
+    "rowCountCorrect": true
+  },
+  "queries": {
+    "point": {
+      "elapsedMs": 4.45,
+      "strategy": "index",
+      "blocks": 123,
+      "candidateBlocks": 1,
+      "blocksRead": 1,
+      "rowsScanned": 576,
+      "rowsMatched": 1,
+      "rowsReturned": 1,
+      "correct": true,
+      "indexEntries": 123,
+      "indexPagesRead": 8,
+      "keyComparisons": 10
+    },
+    "range": {
+      "elapsedMs": 17.73,
+      "strategy": "index",
+      "blocks": 123,
+      "candidateBlocks": 2,
+      "blocksRead": 2,
+      "rowsScanned": 8768,
+      "rowsMatched": 1000,
+      "rowsReturned": 1000,
+      "correct": true,
+      "indexEntries": 123,
+      "indexPagesRead": 8,
+      "keyComparisons": 13
+    },
+    "covered": {
+      "elapsedMs": 0.21,
+      "strategy": "materialized_aggregate",
+      "blocks": 123,
+      "candidateBlocks": 0,
+      "blocksRead": 0,
+      "rowsScanned": 0,
+      "rowsMatched": 2,
+      "rowsReturned": 2,
+      "correct": true,
+      "indexEntries": 2,
+      "indexPagesRead": 2,
+      "keyComparisons": 2
+    },
+    "fullScan": {
+      "elapsedMs": 1746.23,
+      "strategy": "full_scan",
+      "blocks": 123,
+      "candidateBlocks": 123,
+      "blocksRead": 123,
+      "rowsScanned": 1000000,
+      "rowsMatched": 1000000,
+      "rowsReturned": 1,
+      "correct": true,
+      "indexEntries": 0,
+      "indexPagesRead": 0,
+      "keyComparisons": 0
+    },
+    "tokenBudget": {
+      "elapsedMs": 786.32,
+      "tokenCost": 1219,
+      "withinBudget": true,
+      "rowsReturned": 50
+    }
+  },
+  "processMaxRssBytes": 587137024
+}

@@ -1,0 +1,50 @@
+{
+  "format": "pluma-stream-export-benchmark",
+  "version": 1,
+  "createdAt": "2026-08-25T17:06:06.927Z",
+  "hardware": {
+    "cpu": "Apple M3",
+    "logicalCpus": 8,
+    "totalMemoryBytes": 17179869184,
+    "platform": "darwin",
+    "release": "27.0.0",
+    "node": "v24.5.0"
+  },
+  "input": {
+    "kind": "async-iterable-database-simulation",
+    "rows": 10000000
+  },
+  "compile": {
+    "elapsedMs": 14622.44,
+    "rowsPerSecond": 683880.6,
+    "memoryBudgetBytes": 134217728,
+    "rowCountCorrect": true
+  },
+  "indexedPoint": {
+    "rowsScanned": 5760,
+    "expectedComplexity": "O(log N + K)"
+  },
+  "outputs": [
+    {
+      "format": "csv",
+      "bytes": 219546059,
+      "exportElapsedMs": 38406.07,
+      "exportRowsPerSecond": 260375.53,
+      "importElapsedMs": 30686.96,
+      "importRowsPerSecond": 325871.28,
+      "roundtripRows": 10000000,
+      "correct": true
+    },
+    {
+      "format": "parquet",
+      "bytes": 80715174,
+      "exportElapsedMs": 40160.49,
+      "exportRowsPerSecond": 249000.97,
+      "importElapsedMs": 24507.69,
+      "importRowsPerSecond": 408035.18,
+      "roundtripRows": 10000000,
+      "correct": true
+    }
+  ],
+  "processMaxRssBytes": 506888192
+}

@@ -265,6 +265,18 @@ describe("mcp server", () => {
       "read_pdf",
       "read_html",
       "read_url",
+      "pluma_context_compile",
+      "pluma_context_compile_start",
+      "pluma_context_job_inspect",
+      "pluma_context_job_cancel",
+      "pluma_context_inspect",
+      "pluma_context_sample",
+      "pluma_context_query",
+      "pluma_context_explain",
+      "pluma_context_query_export",
+      "pluma_context_export",
+      "pluma_context_pin",
+      "pluma_context_release",
     ])
     expect(list.result.tools[0].inputSchema.properties.root).toBeUndefined()
     const readHtmlTool = list.result.tools.find((tool: any) => tool.name === "read_html")

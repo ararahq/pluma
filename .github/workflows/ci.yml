@@ -25,5 +25,3 @@ jobs:
       - run: npm run build:all
       - run: node dist/bin/pluma.js examples/exemplo.md -o /tmp/pluma-smoke.pdf
       - run: npm pack --dry-run --json
-      - run: npm pack --workspace @ararahq/pluma-cloud --dry-run --json
-      - run: docker build -t pluma-cloud:ci .

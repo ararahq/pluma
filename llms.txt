@@ -1,8 +1,32 @@
 # pluma
 
-An open-source document engine that turns Markdown into branded, production-ready PDFs
-without Chromium or LaTeX. Node library + CLI + MCP. PDF, HTML, and public-URL readers
-are included as secondary utilities. Install: `npm install @ararahq/pluma`.
+An open-source bounded-context and export engine for CSV, XLSX, and Parquet, plus a
+Markdown-to-PDF document engine without Chromium or LaTeX. Node library + CLI + MCP.
+Install: `npm install @ararahq/pluma`.
+
+## Dataset context
+
+```ts
+import { compileContext, openContext } from "@ararahq/pluma"
+const job = compileContext("ledger.parquet", { output: "ledger.pluma" })
+await job.result()
+const context = openContext("ledger.pluma")
+const result = context.query({
+  filter: [{ column: "status", op: "eq", value: "paid" }],
+  groupBy: ["country"],
+  metrics: [{ column: "amount", aggregate: "sum", as: "revenue" }],
+})
+const payload = result.payload({ tokenBudget: 4000, tokenizer: { id: "o200k_base", version: "1" } })
+```
+
+Use `context.inspect(...)` before querying, `context.sample(...)` for a deterministic head
+sample, and `context.export({ format: "csv"|"xlsx"|"parquet", output })` for a streamed
+artifact. Query results carry package fingerprint, plan hash, input block hashes, and exact
+row counts. A `.pluma` package is an open directory containing a manifest, bounded Arrow IPC
+blocks, Markdown overview/schema views, and source provenance.
+
+CLI: `pluma context compile`, `inspect`, `query`, and `export`. MCP adds compile, durable
+compile job inspect/cancel, inspect, sample, exact query, export, pin, and release tools.
 
 ## Generate a document (what an LLM should output)
 
@@ -126,6 +150,9 @@ PDF reading uses the existing text layer; OCR and non-empty passwords are not su
 `maxTokens`, `keepSelectors`, and `dropSelectors`. `readUrl` also supports `timeoutMs`,
 `maxBytes`, `maxRedirects`, `headers`, `userAgent`, and `networkPolicy`. Network access is
 public-only and DNS-pinned by default; use `networkPolicy: "any"` only for trusted intranet URLs.
+`readUrl` does not execute JavaScript. A client-rendered SPA may therefore expose only its
+initial loading shell and metadata; use a browser-capable upstream and pass its HTML to
+`readHtml` when JavaScript rendering is required.
 
 ## MCP tools (pluma mcp)
 

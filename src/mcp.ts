@@ -1,9 +1,10 @@
 import { lstatSync, realpathSync, writeFileSync } from "node:fs"
+import { randomUUID } from "node:crypto"
 import { dirname, extname, isAbsolute, relative, resolve } from "node:path"
-import { renderPdf, renderPdfCloudSafe, readPdf, readHtml, readUrl, type RenderOptions, type ReadPdfOptions, type ReadHtmlOptions } from "./index.js"
+import { renderPdf, renderPdfCloudSafe, readPdf, readHtml, readUrl, compileContext, openContext, type RenderOptions, type ReadPdfOptions, type ReadHtmlOptions } from "./index.js"
 
 const PROTOCOL_VERSION = "2024-11-05"
-const SERVER_INFO = { name: "pluma", version: "0.2.0" }
+const SERVER_INFO = { name: "pluma", version: "0.4.2" }
 const MAX_MCP_FRAME_BYTES = 2 * 1024 * 1024
 const MAX_MCP_OUTPUT_BYTES = 8 * 1024 * 1024
 const MAX_MCP_CONCURRENCY = 8
@@ -13,6 +14,24 @@ const MCP_DEFAULT_TIMEOUT_MS = 10_000
 const MCP_MAX_FETCH_BYTES = 20 * 1024 * 1024
 const MCP_DEFAULT_FETCH_BYTES = 20 * 1024 * 1024
 const MCP_MAX_TOKENS = 1_000_000
+
+const CONTEXT_TOOLS = [
+  { name: "pluma_context_compile", description: "Compile CSV, XLSX, or Parquet into an open .pluma context package with bounded batches.", inputSchema: { type: "object", properties: { input_path: { type: "string" }, output_path: { type: "string" } }, required: ["input_path", "output_path"] } },
+  { name: "pluma_context_compile_start", description: "Start a non-blocking local context compile job and return a job ID.", inputSchema: { type: "object", properties: { input_path: { type: "string" }, output_path: { type: "string" } }, required: ["input_path", "output_path"] } },
+  { name: "pluma_context_job_inspect", description: "Inspect current state and progressive schema for a local compile job.", inputSchema: { type: "object", properties: { job_id: { type: "string" } }, required: ["job_id"] } },
+  { name: "pluma_context_job_cancel", description: "Cancel a running local context compile job.", inputSchema: { type: "object", properties: { job_id: { type: "string" } }, required: ["job_id"] } },
+  { name: "pluma_context_inspect", description: "Inspect a committed .pluma package within an exact token budget.", inputSchema: { type: "object", properties: { package_path: { type: "string" }, view: { type: "string", enum: ["overview", "schema"] }, token_budget: { type: "integer", minimum: 256 }, tokenizer: { type: "string", enum: ["cl100k_base", "o200k_base"] } }, required: ["package_path", "token_budget", "tokenizer"] } },
+  { name: "pluma_context_sample", description: "Return a deterministic bounded sample with context accounting.", inputSchema: { type: "object", properties: { package_path: { type: "string" }, relation: { type: "string" }, rows: { type: "integer", minimum: 1, maximum: 1000 }, token_budget: { type: "integer", minimum: 256 }, tokenizer: { type: "string", enum: ["cl100k_base", "o200k_base"] } }, required: ["package_path", "token_budget", "tokenizer"] } },
+  { name: "pluma_context_query", description: "Execute an exact structured query over a .pluma package and return block-level provenance.", inputSchema: { type: "object", properties: { package_path: { type: "string" }, plan: { type: "object" }, token_budget: { type: "integer", minimum: 256 }, tokenizer: { type: "string", enum: ["cl100k_base", "o200k_base"] } }, required: ["package_path", "plan", "token_budget", "tokenizer"] } },
+  { name: "pluma_context_explain", description: "Explain the exact execution strategy, index, candidate blocks, and estimated work before running a query.", inputSchema: { type: "object", properties: { package_path: { type: "string" }, plan: { type: "object" } }, required: ["package_path", "plan"] } },
+  { name: "pluma_context_query_export", description: "Execute a structured query directly into CSV, XLSX, or Parquet without materializing the complete result.", inputSchema: { type: "object", properties: { package_path: { type: "string" }, plan: { type: "object" }, output_path: { type: "string" }, format: { type: "string", enum: ["csv", "xlsx", "parquet"] } }, required: ["package_path", "plan", "output_path", "format"] } },
+  { name: "pluma_context_export", description: "Stream a committed .pluma relation to CSV, XLSX, or Parquet.", inputSchema: { type: "object", properties: { package_path: { type: "string" }, output_path: { type: "string" }, relation: { type: "string" }, format: { type: "string", enum: ["csv", "xlsx", "parquet"] } }, required: ["package_path", "output_path", "format"] } },
+  { name: "pluma_context_pin", description: "Pin a named context view for the current MCP process.", inputSchema: { type: "object", properties: { package_path: { type: "string" }, id: { type: "string" }, value: {} }, required: ["package_path", "id"] } },
+  { name: "pluma_context_release", description: "Release a pinned context view.", inputSchema: { type: "object", properties: { package_path: { type: "string" }, id: { type: "string" } }, required: ["package_path", "id"] } },
+] as const
+
+const CONTEXT_SESSIONS = new Map<string, ReturnType<typeof openContext>>()
+const CONTEXT_JOBS = new Map<string, { job: ReturnType<typeof compileContext>; output: string }>()
 
 const SAFE_RENDER_TOOL = {
   name: "render_pdf",
@@ -177,7 +196,7 @@ export async function handleMcpRequest(request: JsonRpcRequest, options: McpOpti
         serverInfo: SERVER_INFO,
       })
     case "tools/list":
-      return reply(request.id, { tools: [options.trustedLocal ? TRUSTED_RENDER_TOOL : SAFE_RENDER_TOOL, READ_TOOL, READ_HTML_TOOL, READ_URL_TOOL] })
+      return reply(request.id, { tools: [options.trustedLocal ? TRUSTED_RENDER_TOOL : SAFE_RENDER_TOOL, READ_TOOL, READ_HTML_TOOL, READ_URL_TOOL, ...CONTEXT_TOOLS] })
     case "tools/call":
       return handleToolCall(request, options)
     case "ping":
@@ -206,12 +225,76 @@ async function handleToolCall(request: JsonRpcRequest, options: McpOptions): Pro
       return handleReadHtml(id, args)
     case READ_URL_TOOL.name:
       return handleReadUrl(id, args, options)
+    case "pluma_context_compile":
+    case "pluma_context_compile_start":
+    case "pluma_context_job_inspect":
+    case "pluma_context_job_cancel":
+    case "pluma_context_inspect":
+    case "pluma_context_sample":
+    case "pluma_context_query":
+    case "pluma_context_explain":
+    case "pluma_context_query_export":
+    case "pluma_context_export":
+    case "pluma_context_pin":
+    case "pluma_context_release":
+      return handleContextTool(id, name, args, options)
     default:
       return toolError(
         id,
         `Unknown tool: ${name}. Available: ${SAFE_RENDER_TOOL.name}, ${READ_TOOL.name}, ${READ_HTML_TOOL.name}, ${READ_URL_TOOL.name}`,
       )
   }
+}
+
+async function handleContextTool(id: number | string, name: string, args: Record<string, unknown>, options: McpOptions): Promise<JsonRpcResponse> {
+  try {
+    if (name === "pluma_context_job_inspect" || name === "pluma_context_job_cancel") {
+      const jobId = String(args.job_id ?? "")
+      const current = CONTEXT_JOBS.get(jobId)
+      if (!current) throw new Error("Unknown context job_id")
+      if (name === "pluma_context_job_cancel") await current.job.cancel()
+      const event = await current.job.inspect()
+      return reply(id, { content: [{ type: "text", text: JSON.stringify({ job_id: jobId, output: current.output, ...event }) }] })
+    }
+    const inputPath = typeof args.package_path === "string" ? args.package_path : typeof args.input_path === "string" ? args.input_path : undefined
+    if (!inputPath) throw new Error("package_path or input_path is required")
+    const packagePath = options.trustedLocal ? resolve(inputPath) : safeInputPath(inputPath)
+    if (name === "pluma_context_compile" || name === "pluma_context_compile_start") {
+      if (typeof args.output_path !== "string") throw new Error("output_path is required")
+      const output = options.trustedLocal ? resolve(args.output_path) : safeNewPath(args.output_path, ".pluma")
+      const job = compileContext(packagePath, { output })
+      if (name === "pluma_context_compile_start") {
+        const jobId = randomUUID()
+        CONTEXT_JOBS.set(jobId, { job, output })
+        void job.result().catch(() => undefined)
+        return reply(id, { content: [{ type: "text", text: JSON.stringify({ job_id: jobId, output, state: "queued" }) }] })
+      }
+      const manifest = await job.result()
+      return reply(id, { content: [{ type: "text", text: JSON.stringify({ output, manifest }) }] })
+    }
+    const context = CONTEXT_SESSIONS.get(packagePath) ?? openContext(packagePath)
+    CONTEXT_SESSIONS.set(packagePath, context)
+    const budget = { tokenBudget: Number(args.token_budget), tokenizer: { id: args.tokenizer as "o200k_base" | "cl100k_base", version: "1" as const } }
+    let value: unknown
+    if (name === "pluma_context_inspect") value = context.inspect({ ...budget, view: args.view === "schema" ? "schema" : "overview" })
+    else if (name === "pluma_context_sample") value = context.sample({ ...budget, relation: typeof args.relation === "string" ? args.relation : undefined, rows: typeof args.rows === "number" ? args.rows : undefined })
+    else if (name === "pluma_context_query") value = context.query((args.plan ?? {}) as never).payload(budget)
+    else if (name === "pluma_context_explain") value = context.explain((args.plan ?? {}) as never)
+    else if (name === "pluma_context_query_export") {
+      if (typeof args.output_path !== "string" || !["csv", "xlsx", "parquet"].includes(String(args.format))) throw new Error("output_path and valid format are required")
+      const output = options.trustedLocal ? resolve(args.output_path) : safeNewPath(args.output_path, `.${args.format}`)
+      const evidence = await context.exportQuery((args.plan ?? {}) as never, { format: args.format as "csv" | "xlsx" | "parquet", output })
+      value = { output, evidence }
+    }
+    else if (name === "pluma_context_export") {
+      if (typeof args.output_path !== "string" || !["csv", "xlsx", "parquet"].includes(String(args.format))) throw new Error("output_path and valid format are required")
+      const output = options.trustedLocal ? resolve(args.output_path) : safeNewPath(args.output_path, `.${args.format}`)
+      await context.export({ relation: typeof args.relation === "string" ? args.relation : undefined, format: args.format as "csv" | "xlsx" | "parquet", output })
+      value = { output }
+    } else if (name === "pluma_context_pin") { context.pin(String(args.id), args.value); value = { pinned: String(args.id) } }
+    else { value = { released: context.release(String(args.id)) } }
+    return reply(id, { content: [{ type: "text", text: JSON.stringify(value) }] })
+  } catch (error) { return toolError(id, error instanceof Error ? error.message : "Context operation failed") }
 }
 
 function withinRoot(path: string, root: string): boolean {
@@ -239,6 +322,14 @@ function safeInputPath(input: string): string {
   const path = realpathSync(resolve(input))
   if (!withinRoot(path, root)) throw new Error("Safe MCP mode reads only files inside the current working directory")
   return path
+}
+
+function safeNewPath(input: string, extension: string): string {
+  const root = realpathSync(process.cwd())
+  const output = resolve(input)
+  const parent = realpathSync(dirname(output))
+  if (!withinRoot(parent, root) || !output.toLowerCase().endsWith(extension)) throw new Error(`Safe MCP mode writes only ${extension} paths inside the current working directory`)
+  return output
 }
 
 function handleRenderPdf(id: number | string, args: Record<string, unknown>, mcpOptions: McpOptions): JsonRpcResponse {
