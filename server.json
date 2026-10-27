@@ -7,12 +7,12 @@
     "url": "https://github.com/ararahq/pluma",
     "source": "github"
   },
-  "version": "0.4.2",
+  "version": "0.5.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@ararahq/pluma",
-      "version": "0.4.2",
+      "version": "0.5.0",
       "packageArguments": [
         {
           "type": "positional",

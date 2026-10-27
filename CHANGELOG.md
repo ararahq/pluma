@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 — 2026-10-27
+
+- `renderPdfCloudSafe` accepts a logo as bytes (`logo: { data, width? }`): PNG or JPEG up to 2 MiB and 4096 pixels per side, checked by their headers and mapped into an in-memory workspace, so hosted renders can carry a tenant's logo without reading anything from disk. `brand.logo` paths stay rejected.
+- Ship `brace-expansion` 1.1.21 and 2.1.7 in the locked dependency tree (GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p).
+
 ## 0.4.2 — 2026-08-25
 
 - Preserve declared scalar types during Parquet export, including integer-looking `float64` and decimal values.

@@ -88,7 +88,7 @@ export class ContextPackageWriter {
       relations,
       artifacts: [...this.artifacts].sort((a, b) => a.path.localeCompare(b.path)),
       warnings,
-      compiler: { name: "@ararahq/pluma" as const, version: "0.4.2" },
+      compiler: { name: "@ararahq/pluma" as const, version: "0.5.0" },
     }
     const fingerprint = sha256(canonicalJson(base) + base.artifacts.map((artifact) => artifact.sha256).join(""))
     const manifest: ContextManifest = { ...base, fingerprint }
