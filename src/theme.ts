@@ -125,6 +125,8 @@ export function createTheme(brand: Brand = {}, name = "custom"): Theme {
 #show heading.where(level: 2): set text(size: 13pt, weight: 700)
 #show heading.where(level: 3): set text(size: 11pt, weight: 700)
 #show heading: set block(above: 1.6em, below: 0.8em)
+#show heading: set text(hyphenate: false)
+#show heading: set par(justify: false)
 ${headingFontRule}
 ${monoFontRule}
 #let divider() = line(length: 100%, stroke: 0.5pt + ${c.border})
@@ -153,6 +155,7 @@ ${monoFontRule}
   stroke: (x, y) => if y == 0 { (bottom: 1pt + ${c.text}) } else { (bottom: 0.5pt + ${c.border}) },
   inset: 8pt,
 )
+#show table.cell: set par(justify: false)
 #show link: set text(fill: ${c.link})
 
 ${titleBlock(meta, brand, c)}
@@ -172,7 +175,12 @@ function titleBlock(
   }
   if (!meta.title) return lines.join("\n")
 
-  lines.push(`#block(spacing: 0pt)[`, `  #text(size: 24pt, weight: 700, "${escapeString(meta.title)}")`)
+  lines.push(
+    `#block(spacing: 0pt)[`,
+    `  #set par(justify: false)`,
+    `  #set text(hyphenate: false)`,
+    `  #text(size: 24pt, weight: 700, "${escapeString(meta.title)}")`,
+  )
   if (meta.subtitle) {
     lines.push(`  #v(6pt)`, `  #text(size: 12pt, fill: ${c.muted}, "${escapeString(meta.subtitle)}")`)
   }

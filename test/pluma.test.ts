@@ -76,6 +76,29 @@ describe("markdownToTypst", () => {
     expect(out).toContain("[1], [2]")
   })
 
+  it("should keep words whole in tables that fit, and shrink or hyphenate only tables that do not", () => {
+    const fits = markdownToTypst("| Mês | Investimento | Impressões |\n| :-- | --: | --: |\n| Setembro | R$ 1.000,00 | 120.000 |")
+    expect(fits).toContain("#set text(hyphenate: false)\n#table(")
+
+    const words = ["Responsabilidade", "Visualizações", "Engajamento", "Rentabilidade", "Faturamento", "Conversões"]
+    const wide = markdownToTypst(
+      `| ${words.join(" | ")} |\n|${" --: |".repeat(words.length)}\n| ${words.map(() => "1.000.000,00").join(" | ")} |`,
+    )
+    expect(wide).toMatch(/#set text\(hyphenate: false, size: 0\.\d\dem\)/)
+
+    const crowded = markdownToTypst(
+      `| ${[...words, ...words].join(" | ")} |\n|${" --: |".repeat(words.length * 2)}\n| ${[...words, ...words].join(" | ")} |`,
+    )
+    expect(crowded).toContain("#set text(hyphenate: true, size: 0.70em)")
+  })
+
+  it("should never hyphenate the title or headings", () => {
+    const source = markdownToTypstSource("## Resultado de setembro e outubro de operação", { meta: { title: "Relatório da Padaria Horizonte" } })
+    expect(source).toContain("#show heading: set text(hyphenate: false)")
+    expect(source).toContain("#show heading: set par(justify: false)")
+    expect(source).toMatch(/#set text\(hyphenate: false\)\n {2}#text\(size: 24pt, weight: 700, "Relatório da Padaria Horizonte"\)/)
+  })
+
   it("should convert horizontal rules and drop raw html", () => {
     const out = markdownToTypst("a\n\n---\n\n<div>x</div>\n\nb")
     expect(out).toContain("#divider()")
