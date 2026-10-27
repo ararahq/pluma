@@ -276,11 +276,12 @@ PDF reading requires an existing text layer. It does not perform OCR, decode ima
 
 ### Safe hosted rendering
 
-`renderPdf` remains the unrestricted local API, including custom themes, filesystem assets, fonts, and trusted raw Typst islands. Hosted or multi-tenant services should use `renderPdfCloudSafe`: it rejects raw Typst, Markdown images, and filesystem-backed brand fields, validates an allowlisted brand subset, and returns the generated PDF with its exact page count.
+`renderPdf` remains the unrestricted local API, including custom themes, filesystem assets, fonts, and trusted raw Typst islands. Hosted or multi-tenant services should use `renderPdfCloudSafe`: it rejects raw Typst, Markdown images, and filesystem-backed brand fields, validates an allowlisted brand subset, and returns the generated PDF with its exact page count. A logo travels as bytes instead of a path: PNG or JPEG up to 2 MiB and 4096 pixels per side, checked by its header and mapped into an in-memory workspace.
 
 ```ts
 const { pdf, pageCount } = renderPdfCloudSafe(markdown, {
   brand: { colors: { accent: "#0e7490" }, footer: "Acme" },
+  logo: { data: logoBytes, width: "3cm" }, // optional
 })
 ```
 

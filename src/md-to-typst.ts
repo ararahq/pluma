@@ -115,8 +115,32 @@ function renderListItem(item: Tokens.ListItem, options: MarkdownToTypstOptions, 
   return text.endsWith("\n") ? text : text + "\n"
 }
 
+// The longest word of each column sets how narrow it can get without breaking a word. A table whose words
+// fit the text width keeps them whole; a wider one shrinks its text down to MIN_TABLE_SCALE, and past that
+// it lets words hyphenate again, because a word wider than its cell would overflow into the next one.
+// Widths are counted in average characters of the default A4 text width (470pt / ~5pt per character).
+const TEXT_WIDTH_CHARS = 94
+const CELL_INSET_CHARS = 3
+const HEADER_WIDTH = 1.1
+const MIN_TABLE_SCALE = 0.7
+
+const longestWord = (text: string) => Math.max(0, ...text.split(/\s+/).map((word) => [...word].length))
+
+function tableFit(token: Tokens.Table): { scale: number; hyphenate: boolean } {
+  const words = token.header.reduce(
+    (total, cell, i) =>
+      total + Math.max(longestWord(cell.text) * HEADER_WIDTH, ...token.rows.map((row) => longestWord(row[i]?.text ?? ""))),
+    0,
+  )
+  const room = TEXT_WIDTH_CHARS - CELL_INSET_CHARS * token.header.length
+  if (words <= room) return { scale: 1, hyphenate: false }
+  const scale = room / words
+  return scale >= MIN_TABLE_SCALE ? { scale, hyphenate: false } : { scale: MIN_TABLE_SCALE, hyphenate: true }
+}
+
 function renderTable(token: Tokens.Table, options: MarkdownToTypstOptions): string {
   const columns = token.header.length
+  const fit = tableFit(token)
   const aligns = token.align
     .map((alignment) => (alignment === null ? "left" : alignment))
     .map((alignment) => `${alignment}`)
@@ -128,12 +152,15 @@ function renderTable(token: Tokens.Table, options: MarkdownToTypstOptions): stri
     .map((row) => row.map((cell) => `[${renderInline(cell.tokens, options)}]`).join(", "))
     .join(",\n  ")
   return [
+    "#[",
+    `#set text(hyphenate: ${fit.hyphenate}${fit.scale < 1 ? `, size: ${fit.scale.toFixed(2)}em` : ""})`,
     "#table(",
     `  columns: ${columns},`,
     `  align: (${aligns}),`,
     `  table.header(${header}),`,
     `  ${rows}`,
     ")",
+    "]",
     "",
     "",
   ].join("\n")

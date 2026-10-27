@@ -1,6 +1,6 @@
 {
   "name": "@ararahq/pluma",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "mcpName": "io.github.ararahq/pluma",
   "description": "Bounded context and streaming exports for datasets too large for AI, plus browserless Markdown to PDF.",
   "license": "MIT",

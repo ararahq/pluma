@@ -4,7 +4,7 @@ import { dirname, extname, isAbsolute, relative, resolve } from "node:path"
 import { renderPdf, renderPdfCloudSafe, readPdf, readHtml, readUrl, compileContext, openContext, type RenderOptions, type ReadPdfOptions, type ReadHtmlOptions } from "./index.js"
 
 const PROTOCOL_VERSION = "2024-11-05"
-const SERVER_INFO = { name: "pluma", version: "0.4.2" }
+const SERVER_INFO = { name: "pluma", version: "0.5.0" }
 const MAX_MCP_FRAME_BYTES = 2 * 1024 * 1024
 const MAX_MCP_OUTPUT_BYTES = 8 * 1024 * 1024
 const MAX_MCP_CONCURRENCY = 8

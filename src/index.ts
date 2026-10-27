@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { NodeCompiler } from "@myriaddreamin/typst-ts-node-compiler"
 import { DisabledMarkdownFeatureError, markdownToTypst } from "./md-to-typst.js"
 import { extractFrontmatter } from "./frontmatter.js"
@@ -16,9 +17,18 @@ export interface RenderOptions {
   allowImages?: boolean
 }
 
+export interface CloudSafeLogo {
+  /** PNG or JPEG bytes, at most 2 MiB and 4096 pixels per side. */
+  data: Uint8Array
+  /** Display width, for example "2.8cm" (pt, mm, cm, in or em). */
+  width?: string
+}
+
 export interface CloudSafeRenderOptions {
   brand?: unknown
   meta?: unknown
+  /** Logo bytes ({@link CloudSafeLogo}). Mapped into a virtual workspace: nothing is read from disk. */
+  logo?: unknown
 }
 
 export interface CloudSafeRenderResult {
@@ -67,12 +77,24 @@ export function markdownToTypstSource(markdown: string, options: RenderOptions =
 }
 
 export function renderPdf(markdown: string, options: RenderOptions = {}): Uint8Array {
-  const source = markdownToTypstSource(markdown, options)
+  return compilePdf(markdownToTypstSource(markdown, options), options)
+}
+
+// A workspace that exists only in memory: files mapped into it are the only ones a document can reach.
+const VIRTUAL_WORKSPACE = "/pluma-virtual"
+
+function compilePdf(
+  source: string,
+  options: Pick<RenderOptions, "root" | "fontPaths"> & { virtualFiles?: Record<string, Uint8Array> },
+): Uint8Array {
+  const virtualFiles = Object.entries(options.virtualFiles ?? {})
+  const workspace = virtualFiles.length ? VIRTUAL_WORKSPACE : options.root
   const compiler = NodeCompiler.create({
-    ...(options.root ? { workspace: options.root } : {}),
+    ...(workspace ? { workspace } : {}),
     ...(options.fontPaths?.length ? { fontArgs: [{ fontPaths: options.fontPaths }] } : {}),
   })
   try {
+    for (const [name, data] of virtualFiles) compiler.mapShadow(`${VIRTUAL_WORKSPACE}/${name}`, Buffer.from(data))
     return compiler.pdf({ mainFileContent: source })
   } finally {
     compiler.evictCache(0)
@@ -155,10 +177,71 @@ function cloudSafeMeta(value: unknown): DocumentMeta | undefined {
   return optionalStrings(value, META_KEYS, "meta") as DocumentMeta
 }
 
+const LOGO_KEYS = new Set(["data", "width"])
+const LOGO_MAX_BYTES = 2 * 1024 * 1024
+const LOGO_MAX_SIDE = 4096
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+// JPEG start-of-frame markers carry the pixel size; C4, C8 and CC share the range but are not frames
+const JPEG_FRAMES = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf])
+const JPEG_STANDALONE = new Set([0x01, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8])
+
+interface ImageInfo {
+  extension: "png" | "jpg"
+  width: number
+  height: number
+}
+
+const uint16 = (data: Uint8Array, at: number) => (data[at] << 8) | data[at + 1]
+const uint32 = (data: Uint8Array, at: number) => ((data[at] << 24) >>> 0) + (data[at + 1] << 16) + (data[at + 2] << 8) + data[at + 3]
+
+function pngInfo(data: Uint8Array): ImageInfo | null {
+  if (data.length < 24 || PNG_SIGNATURE.some((byte, i) => data[i] !== byte)) return null
+  if (String.fromCharCode(...data.subarray(12, 16)) !== "IHDR") return null
+  return { extension: "png", width: uint32(data, 16), height: uint32(data, 20) }
+}
+
+function jpegInfo(data: Uint8Array): ImageInfo | null {
+  if (data.length < 4 || data[0] !== 0xff || data[1] !== 0xd8) return null
+  let at = 2
+  while (at + 3 < data.length) {
+    if (data[at] !== 0xff) return null
+    const marker = data[at + 1]
+    if (marker === 0xff) { at += 1; continue }
+    if (JPEG_STANDALONE.has(marker)) { at += 2; continue }
+    if (marker === 0xda || marker === 0xd9) return null
+    if (JPEG_FRAMES.has(marker)) {
+      return at + 8 < data.length ? { extension: "jpg", height: uint16(data, at + 5), width: uint16(data, at + 7) } : null
+    }
+    at += 2 + uint16(data, at + 2)
+  }
+  return null
+}
+
+function cloudSafeLogo(value: unknown): { name: string; data: Uint8Array; width?: string } | undefined {
+  if (value === undefined) return undefined
+  const input = record(value, "logo")
+  assertKnownKeys(input, LOGO_KEYS, "logo")
+  const { data } = input
+  if (!(data instanceof Uint8Array)) throw new UnsafeRenderInputError("logo.data must be a Uint8Array")
+  if (data.length === 0 || data.length > LOGO_MAX_BYTES) {
+    throw new UnsafeRenderInputError(`logo.data must have between 1 and ${LOGO_MAX_BYTES} bytes`)
+  }
+  const image = pngInfo(data) ?? jpegInfo(data)
+  if (!image) throw new UnsafeRenderInputError("logo.data must be a PNG or JPEG image")
+  if (image.width < 1 || image.height < 1 || image.width > LOGO_MAX_SIDE || image.height > LOGO_MAX_SIDE) {
+    throw new UnsafeRenderInputError(`logo.data must be at most ${LOGO_MAX_SIDE}x${LOGO_MAX_SIDE} pixels`)
+  }
+  const width = input.width === undefined ? undefined : optionalText(input.width, "logo.width")
+  // named by content: two logos never share a path, not even in the compiler's memoization
+  const name = `logo-${createHash("sha256").update(data).digest("hex").slice(0, 16)}.${image.extension}`
+  return { name, data, ...(width === undefined ? {} : { width }) }
+}
+
 /**
  * Restricted wrapper intended for hosted/multi-tenant execution. The local
  * `renderPdf` API remains unrestricted and continues to support raw Typst,
- * custom themes, local assets and font directories.
+ * custom themes, local assets and font directories. A logo arrives as
+ * validated bytes and is mapped into a virtual workspace, never as a path.
  */
 export function renderPdfCloudSafe(
   markdown: string,
@@ -166,11 +249,16 @@ export function renderPdfCloudSafe(
 ): CloudSafeRenderResult {
   let pdf: Uint8Array
   try {
-    pdf = renderPdf(markdown, {
-      brand: cloudSafeBrand(options.brand),
+    const logo = cloudSafeLogo(options.logo)
+    const brand = cloudSafeBrand(options.brand)
+    const renderOptions: RenderOptions = {
+      brand: logo ? { ...brand, logo: { path: `/${logo.name}`, ...(logo.width ? { width: logo.width } : {}) } } : brand,
       meta: cloudSafeMeta(options.meta),
       allowRawTypst: false,
       allowImages: false,
+    }
+    pdf = compilePdf(markdownToTypstSource(markdown, renderOptions), {
+      virtualFiles: logo ? { [logo.name]: logo.data } : undefined,
     })
   } catch (error) {
     if (error instanceof DisabledMarkdownFeatureError) {
