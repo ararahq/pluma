@@ -123,7 +123,8 @@ errors `UnknownThemeError`, `InvalidBrandError` (invalid hex/length values).
 
 For hosted/multi-tenant rendering, use `renderPdfCloudSafe(markdown, { brand?, meta? })`.
 It rejects raw Typst, Markdown images, and filesystem-backed/unknown brand fields, then returns
-`{ pdf: Uint8Array, pageCount: number }`. The unrestricted local `renderPdf` API is unchanged.
+`{ pdf: Uint8Array, pageCount: number }`. A logo goes as bytes: `logo: { data: Uint8Array, width?: "3cm" }`
+(PNG or JPEG, up to 2 MiB and 4096 px per side, mapped into an in-memory workspace). The unrestricted local `renderPdf` API is unchanged.
 
 ## Read API
 
