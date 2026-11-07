@@ -11,8 +11,6 @@ sparkle, or AI glyph.
 - `source/pluma-symbol-small.svg`: pixel-hinted 16 × 16 master for 16-32 px.
 - `source/pluma-wordmark.svg`: Geist Bold converted to vector outlines.
 - `source/ararahq/`: immutable official parent artwork.
-- `dist/`: production-ready color, reverse, mono, horizontal, endorsed, and
-  favicon assets.
 
 The Pluma wordmark is vector artwork. Interfaces still expose the accessible
 name `Pluma`; do not replace accessible text with an unlabeled image.
