@@ -36,8 +36,7 @@
     "prepublishOnly": "npm test && tsc -p tsconfig.build.json",
     "bench": "node bench/render.mjs",
     "bench:context": "npm run build && node bench/context.mjs",
-    "bench:suite": "npm run build && node bench/suite.mjs",
-    "brand:check": "node brand/scripts/check-brand.mjs"
+    "bench:suite": "npm run build && node bench/suite.mjs"
   },
   "keywords": [
     "markdown",
