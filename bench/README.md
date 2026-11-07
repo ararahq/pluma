@@ -28,4 +28,4 @@ PLUMA_BENCH_PROFILE=giant npm run bench:suite
 - `standard`: adds 1M and 10M Context rows, all export formats at 1M, and a 1,000-section document.
 - `giant`: adds the 100M Context proof and 10M-row CSV/Parquet streaming round trips.
 
-Each case runs in a fresh process so peak RSS does not leak across workloads. The suite fails on any row-count, query-result, token-budget, or round-trip mismatch and stores the raw JSON plus a generated summary under `docs/benchmarks/`.
+Each case runs in a fresh process so peak RSS does not leak across workloads. The suite fails on any row-count, query-result, token-budget, or round-trip mismatch and stores the raw JSON plus a generated summary under `docs/benchmarks/` (gitignored: results are local to the machine that ran them).
