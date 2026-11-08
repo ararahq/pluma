@@ -51,10 +51,6 @@ export function coerceString(value: string, field: ContextField): ContextValue {
   return value
 }
 
-export function rowsFromArrays(values: unknown[][], fields: ContextField[]): ContextRow[] {
-  return values.map((valuesRow) => Object.fromEntries(fields.map((field, index) => [field.id, normalizeValue(valuesRow[index])])))
-}
-
 export function normalizeValue(value: unknown): ContextValue {
   if (value === undefined || value === null) return null
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return value

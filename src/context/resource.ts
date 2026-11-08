@@ -1,4 +1,3 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { resolve } from "node:path"
 import { ContextError, type ResolvedResourceBudget, type ResourceBudget } from "./types.js"
@@ -27,8 +26,6 @@ function integerInRange(value: number, minimum: number, maximum: number, name: s
 export class ResourceGuard {
   readonly budget: ResolvedResourceBudget
   private readonly startedAt = Date.now()
-  private memoryUsed = 0
-  private spillUsed = 0
 
   constructor(input: ResourceBudget = {}) { this.budget = resolveResourceBudget(input) }
 
@@ -36,42 +33,4 @@ export class ResourceGuard {
     if (this.budget.signal?.aborted) throw new ContextError("PLUMA_CANCELLED", "Operation was cancelled")
     if (Date.now() - this.startedAt > this.budget.timeoutMs) throw new ContextError("PLUMA_TIMEOUT", "Operation exceeded its timeout")
   }
-
-  reserveMemory(bytes: number): () => void {
-    const value = checkedBytes(bytes)
-    if (this.memoryUsed + value > this.budget.memoryBytes) throw new ContextError("PLUMA_MEMORY_LIMIT", `Operation requires more than the ${this.budget.memoryBytes} byte memory budget`)
-    this.memoryUsed += value
-    let released = false
-    return () => { if (!released) { this.memoryUsed -= value; released = true } }
-  }
-
-  accountSpill(bytes: number): void {
-    const value = checkedBytes(bytes)
-    if (this.spillUsed + value > this.budget.spillBytes) throw new ContextError("PLUMA_SPILL_LIMIT", `Operation requires more than the ${this.budget.spillBytes} byte spill budget`)
-    this.spillUsed += value
-  }
-
-  createTemporaryDirectory(prefix = "pluma-"): string {
-    mkdirSync(this.budget.temporaryDirectory, { recursive: true })
-    return mkdtempSync(resolve(this.budget.temporaryDirectory, prefix))
-  }
-}
-
-export function withTemporaryDirectory<T>(guard: ResourceGuard, operation: (path: string) => T): T {
-  const path = guard.createTemporaryDirectory()
-  try { return operation(path) } finally { rmSync(path, { recursive: true, force: true }) }
-}
-
-async function checkedAsync<T>(operation: () => Promise<T>, cleanup: () => void): Promise<T> {
-  try { return await operation() } finally { cleanup() }
-}
-
-export async function withTemporaryDirectoryAsync<T>(guard: ResourceGuard, operation: (path: string) => Promise<T>): Promise<T> {
-  const path = guard.createTemporaryDirectory()
-  return checkedAsync(() => operation(path), () => rmSync(path, { recursive: true, force: true }))
-}
-
-function checkedBytes(bytes: number): number {
-  if (!Number.isSafeInteger(bytes) || bytes < 0) throw new ContextError("PLUMA_RESOURCE_BUDGET", "Resource byte count must be a non-negative integer")
-  return bytes
 }
