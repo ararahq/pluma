@@ -13,13 +13,6 @@ export interface PageMeta {
   jsonLd?: unknown[]
 }
 
-export interface ExtractResult {
-  title?: string
-  meta: PageMeta
-  content: ElementNode
-  mode: "article" | "page"
-}
-
 const NEGATIVE_PATTERN =
   /nav|footer|sidebar|cookie|banner|shar(e|ing)|comment|related|promo|newsletter|modal|advert|breadcrumb|social|subscribe|popup|widget|masthead|menu|pagination|toolbar|disclaimer|consent/i
 

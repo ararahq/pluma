@@ -20,20 +20,6 @@ export interface PositionedGlyph {
   fontKey: string
 }
 
-/**
- * An axis-aligned ruling line in device space — a table border or separator
- * drawn either as a stroked line (m/l/.../S) or, just as commonly, as a thin
- * filled rectangle (re/f). Used by layout.ts as a stronger, position-based
- * signal for "this region is a table" than the text-gap heuristic alone,
- * which misses tables whose columns happen to sit close together.
- */
-export interface Ruling {
-  kind: "h" | "v"
-  pos: number // y for horizontal, x for vertical
-  start: number // x0 for horizontal, y0 for vertical
-  end: number // x1 for horizontal, y1 for vertical
-}
-
 type Matrix = [number, number, number, number, number, number]
 
 function multiply(a: Matrix, b: Matrix): Matrix {
